@@ -1,0 +1,19 @@
+export const UserRole = {
+  FARMER: "FARMER",
+  BUYER: "BUYER",
+  BROKER: "BROKER",
+  PROCESSOR: "PROCESSOR",
+  CONSUMER: "CONSUMER",
+};
+
+export const ProductCategory = {
+  CEREALS: "CEREALS",
+  PULSES: "PULSES",
+  VEGETABLES: "VEGETABLES",
+  FRUITS: "FRUITS",
+  SPICES: "SPICES",
+  OILSEEDS: "OILSEEDS",
+  COTTON: "COTTON",
+  SUGARCANE: "SUGARCANE",
+  OTHER: "OTHER",
+};
