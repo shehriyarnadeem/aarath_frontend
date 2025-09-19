@@ -1,6 +1,7 @@
-import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Filter, Plus, Star, MapPin, Clock } from "lucide-react";
+import React, { useState } from "react";
+
 import Button from "../../../components/Button";
 
 const ProductSearch = () => {

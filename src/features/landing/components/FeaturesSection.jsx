@@ -1,6 +1,6 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { Users, TrendingUp, Shield, Globe, Zap, Award } from "lucide-react";
+import React from "react";
 
 const FeaturesSection = () => {
   const features = [

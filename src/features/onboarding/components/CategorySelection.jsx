@@ -1,6 +1,6 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { Check, Wheat, Leaf, Zap, Flower, Apple } from "lucide-react";
+import React from "react";
 
 const CategorySelection = ({ selectedCategories, onCategoryToggle }) => {
   const categories = [

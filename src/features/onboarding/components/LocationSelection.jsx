@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MapPin, ChevronDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
 
 // Pakistan states and cities data
 const locationData = {

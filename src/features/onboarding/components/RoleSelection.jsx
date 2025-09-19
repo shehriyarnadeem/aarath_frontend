@@ -1,6 +1,6 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { User, Users, ShoppingCart } from "lucide-react";
+import React from "react";
 
 const RoleSelection = ({ selectedRole, onRoleSelect }) => {
   const roles = [

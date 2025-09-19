@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Home,
   Search,
@@ -8,7 +7,9 @@ import {
   Plus,
   LogOut,
 } from "lucide-react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
+
 import Logo from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
 

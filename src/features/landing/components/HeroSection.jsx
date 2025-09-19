@@ -1,6 +1,7 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Zap } from "lucide-react";
+import React from "react";
+
 import Button from "../../../components/Button";
 
 const HeroSection = ({ onGetStarted, onContinueAsGuest }) => {

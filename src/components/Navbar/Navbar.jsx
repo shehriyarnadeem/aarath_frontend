@@ -1,8 +1,9 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import Logo from "../Logo";
+import React from "react";
+
 import Button from "../Button";
+import Logo from "../Logo";
 
 const Navbar = ({
   isOpen,

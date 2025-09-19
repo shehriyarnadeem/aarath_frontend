@@ -1,35 +1,35 @@
 import React, { useState } from "react";
+import { Toaster } from "react-hot-toast";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
 } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
 
 // Layouts
-import LandingLayout from "../layouts/LandingLayout";
-import AuthLayout from "../layouts/AuthLayout";
-import DashboardLayout from "../layouts/DashboardLayout";
-
-// Landing Pages
-import Home from "../features/landing/pages/Home";
-
-// Auth Pages
+import { AuthProvider, useAuth } from "../context/AuthContext";
 import Login from "../features/auth/pages/Login";
 import Register from "../features/auth/pages/Register";
+import Overview from "../features/dashboard/pages/Overview";
+import ProductSearch from "../features/dashboard/pages/ProductSearch";
+import Home from "../features/landing/pages/Home";
+import OnboardingFlow from "../features/onboarding/pages/OnboardingFlow";
+import AuthLayout from "../layouts/AuthLayout";
+import DashboardLayout from "../layouts/DashboardLayout";
+import LandingLayout from "../layouts/LandingLayout";
+
+// Landing Pages
+
+// Auth Pages
 
 // Onboarding Pages
-import OnboardingFlow from "../features/onboarding/pages/OnboardingFlow";
 
 // Dashboard Pages
-import ProductSearch from "../features/dashboard/pages/ProductSearch";
 
 // Dashboard Pages
-import Overview from "../features/dashboard/pages/Overview";
 
 // Context
-import { AuthProvider, useAuth } from "../context/AuthContext";
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, userProfile, loading } = useAuth();

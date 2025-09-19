@@ -1,4 +1,5 @@
 import axios from "axios";
+
 import { auth } from "../firebaseConfig";
 
 // Create axios instance with base configuration

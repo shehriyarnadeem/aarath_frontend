@@ -1,12 +1,13 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { useForm } from "react-hook-form";
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "../../../firebaseConfig";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+
 import Button from "../../../components/Button";
 import Logo from "../../../components/Logo";
-import toast from "react-hot-toast";
+import { auth, googleProvider } from "../../../firebaseConfig";
 
 const Register = ({ onSuccess, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);

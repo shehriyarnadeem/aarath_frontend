@@ -1,12 +1,13 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { useForm } from "react-hook-form";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "../../../firebaseConfig";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+
 import Button from "../../../components/Button";
 import Logo from "../../../components/Logo";
-import toast from "react-hot-toast";
+import { auth, googleProvider } from "../../../firebaseConfig";
 
 const Login = ({ onSuccess, onSwitchToRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -64,9 +65,9 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Email Field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          {/* <label className="block text-sm font-medium text-gray-700 mb-2">
             Email Address
-          </label>
+          </label> */}
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -91,9 +92,9 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
 
         {/* Password Field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          {/* <label className="block text-sm font-medium text-gray-700 mb-2">
             Password
-          </label>
+          </label> */}
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input

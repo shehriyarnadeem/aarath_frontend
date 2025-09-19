@@ -1,6 +1,6 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { Leaf } from "lucide-react";
+import React from "react";
 
 const Logo = ({ size = "md", showText = true, className = "" }) => {
   const sizes = {

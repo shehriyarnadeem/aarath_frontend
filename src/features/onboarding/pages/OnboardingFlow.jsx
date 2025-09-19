@@ -1,16 +1,16 @@
-import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
-import Logo from "../../../components/Logo";
-import Button from "../../../components/Button";
-import RoleSelection from "../components/RoleSelection";
-import LocationSelection from "../components/LocationSelection";
-import CategorySelection from "../components/CategorySelection";
-import { useAuth } from "../../../context/AuthContext";
 import { apiClient } from "../../../api/client";
+import Button from "../../../components/Button";
+import Logo from "../../../components/Logo";
+import { useAuth } from "../../../context/AuthContext";
+import CategorySelection from "../components/CategorySelection";
+import LocationSelection from "../components/LocationSelection";
+import RoleSelection from "../components/RoleSelection";
 
 const OnboardingFlow = () => {
   const [currentStep, setCurrentStep] = useState(1);

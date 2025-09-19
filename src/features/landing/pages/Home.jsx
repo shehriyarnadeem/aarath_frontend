@@ -1,10 +1,11 @@
-import React from "react";
 import { motion } from "framer-motion";
-import HeroSection from "../components/HeroSection";
-import FeaturesSection from "../components/FeaturesSection";
-import Testimonials from "../components/Testimonials";
-import Button from "../../../components/Button";
 import { ArrowRight } from "lucide-react";
+import React from "react";
+
+import Button from "../../../components/Button";
+import FeaturesSection from "../components/FeaturesSection";
+import HeroSection from "../components/HeroSection";
+import Testimonials from "../components/Testimonials";
 
 const Home = ({ onGetStarted, onContinueAsGuest }) => {
   return (
