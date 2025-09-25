@@ -8,25 +8,39 @@ import { apiClient } from "../../../api/client";
 import Button from "../../../components/Button";
 import Logo from "../../../components/Logo";
 import { useAuth } from "../../../context/AuthContext";
-import CategorySelection from "../components/CategorySelection";
 import LocationSelection from "../components/LocationSelection";
 import RoleSelection from "../components/RoleSelection";
+import WhatsappVerification from "../components/WhatsappVerification";
+import AccountTypeSelection from "../components/AccountTypeSelection";
+import PersonalDetails from "../components/PersonalDetails";
+import CompanyDetails from "../components/CompanyDetails";
 
 const OnboardingFlow = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [verificationLoading, setVerificationLoading] = useState(false);
   const navigate = useNavigate();
   const { user, updateUserProfile } = useAuth();
 
   // Form data
   const [formData, setFormData] = useState({
+    whatsapp: "",
+    whatsappVerified: false,
     role: "",
     state: "",
     city: "",
     businessCategories: [],
+    accountType: "",
+    personal: { name: "", location: "", profilePicture: null },
+    company: {
+      companyName: "",
+      businessAddress: "",
+      businessRole: "",
+      companyPicture: null,
+    },
   });
 
-  const totalSteps = 3;
+  const totalSteps = 5;
   const progressPercentage = (currentStep / totalSteps) * 100;
 
   const handleNext = () => {
@@ -53,27 +67,47 @@ const OnboardingFlow = () => {
     setFormData((prev) => ({ ...prev, city }));
   };
 
-  const handleCategoryToggle = (categoryId) => {
+  const handleWhatsappChange = (value) => {
     setFormData((prev) => ({
       ...prev,
-      businessCategories: prev.businessCategories.includes(categoryId)
-        ? prev.businessCategories.filter((id) => id !== categoryId)
-        : [...prev.businessCategories, categoryId],
+      whatsapp: value,
+      whatsappVerified: false,
     }));
+  };
+
+  const handleWhatsappVerify = async () => {
+    setVerificationLoading(true);
+    // TODO: Integrate real verification. For now, mock success after delay.
+    setTimeout(() => {
+      setFormData((prev) => ({ ...prev, whatsappVerified: true }));
+      setVerificationLoading(false);
+      toast.success("WhatsApp number verified!");
+    }, 1000);
+  };
+
+  const handleAccountTypeChange = (type) => {
+    setFormData((prev) => ({ ...prev, accountType: type }));
+  };
+
+  const handlePersonalChange = (data) => {
+    setFormData((prev) => ({ ...prev, personal: data }));
+  };
+
+  const handleCompanyChange = (data) => {
+    setFormData((prev) => ({ ...prev, company: data }));
   };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Update user profile with onboarding data
-      const updatedProfile = await apiClient.users.update(user.uid, {
+      // Prepare data for backend
+      const payload = {
         ...formData,
         profileCompleted: true,
-      });
-
-      // Update auth context with completed profile
+        // Optionally handle file uploads separately
+      };
+      const updatedProfile = await apiClient.users.update(user.uid, payload);
       updateUserProfile(updatedProfile);
-
       toast.success("Profile setup completed successfully!");
       navigate("/dashboard");
     } catch (error) {
@@ -87,20 +121,40 @@ const OnboardingFlow = () => {
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.role !== "";
+        return formData.whatsapp && formData.whatsappVerified;
       case 2:
-        return formData.state !== "" && formData.city !== "";
+        return !!formData.role;
       case 3:
-        return formData.businessCategories.length > 0;
+        return formData.state !== "" && formData.city !== "";
+      case 4:
+        return !!formData.accountType;
+      case 5:
+        if (formData.accountType === "personal") {
+          return (
+            formData.personal.name &&
+            formData.personal.location &&
+            formData.personal.profilePicture
+          );
+        } else if (formData.accountType === "company") {
+          return (
+            formData.company.companyName &&
+            formData.company.businessAddress &&
+            formData.company.businessRole &&
+            formData.company.companyPicture
+          );
+        }
+        return false;
       default:
         return false;
     }
   };
 
   const stepTitles = {
-    1: "Role Selection",
-    2: "Location Details",
-    3: "Business Categories",
+    1: "WhatsApp Verification",
+    2: "Role Selection",
+    3: "Location Details",
+    4: "Account Type",
+    5: "Details",
   };
 
   return (
@@ -132,7 +186,7 @@ const OnboardingFlow = () => {
         <div className="max-w-4xl mx-auto">
           {/* Step Indicator */}
           <div className="flex items-center justify-center mb-8">
-            {[1, 2, 3].map((step) => (
+            {[1, 2, 3, 4, 5].map((step) => (
               <React.Fragment key={step}>
                 <div
                   className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-medium transition-all ${
@@ -143,7 +197,7 @@ const OnboardingFlow = () => {
                 >
                   {step}
                 </div>
-                {step < 3 && (
+                {step < 5 && (
                   <div
                     className={`w-12 h-1 mx-2 rounded-full transition-all ${
                       step < currentStep ? "bg-primary-500" : "bg-gray-200"
@@ -170,13 +224,23 @@ const OnboardingFlow = () => {
             transition={{ duration: 0.3 }}
           >
             {currentStep === 1 && (
+              <WhatsappVerification
+                value={formData.whatsapp}
+                onChange={handleWhatsappChange}
+                onVerify={handleWhatsappVerify}
+                verified={formData.whatsappVerified}
+                loading={verificationLoading}
+              />
+            )}
+
+            {currentStep === 2 && (
               <RoleSelection
                 selectedRole={formData.role}
                 onRoleSelect={handleRoleSelect}
               />
             )}
 
-            {currentStep === 2 && (
+            {currentStep === 3 && (
               <LocationSelection
                 selectedState={formData.state}
                 selectedCity={formData.city}
@@ -185,12 +249,25 @@ const OnboardingFlow = () => {
               />
             )}
 
-            {currentStep === 3 && (
-              <CategorySelection
-                selectedCategories={formData.businessCategories}
-                onCategoryToggle={handleCategoryToggle}
+            {currentStep === 4 && (
+              <AccountTypeSelection
+                value={formData.accountType}
+                onChange={handleAccountTypeChange}
               />
             )}
+
+            {currentStep === 5 &&
+              (formData.accountType === "personal" ? (
+                <PersonalDetails
+                  data={formData.personal}
+                  onChange={handlePersonalChange}
+                />
+              ) : (
+                <CompanyDetails
+                  data={formData.company}
+                  onChange={handleCompanyChange}
+                />
+              ))}
           </motion.div>
 
           {/* Navigation */}
