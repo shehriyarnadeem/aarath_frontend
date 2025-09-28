@@ -1,5 +1,15 @@
 import { motion } from "framer-motion";
-import { User, Users, ShoppingCart } from "lucide-react";
+import {
+  User,
+  Users,
+  ShoppingCart,
+  Briefcase,
+  DollarSign,
+  Building,
+  Globe,
+  PackageSearch,
+  Factory,
+} from "lucide-react";
 import React from "react";
 
 const RoleSelection = ({ selectedRole, onRoleSelect }) => {
@@ -32,6 +42,52 @@ const RoleSelection = ({ selectedRole, onRoleSelect }) => {
       gradient: "from-purple-500 to-purple-600",
       bgColor: "bg-purple-50",
       borderColor: "border-purple-200",
+    },
+    {
+      id: "RESELLER",
+      title: "Reseller/Seller",
+      description:
+        "I resell or sell agricultural products to other businesses or consumers",
+      icon: <Briefcase className="w-8 h-8" />,
+      gradient: "from-yellow-500 to-yellow-600",
+      bgColor: "bg-yellow-50",
+      borderColor: "border-yellow-200",
+    },
+    {
+      id: "TRADER",
+      title: "Trader",
+      description: "I trade agricultural commodities in bulk or on exchanges",
+      icon: <DollarSign className="w-8 h-8" />,
+      gradient: "from-pink-500 to-pink-600",
+      bgColor: "bg-pink-50",
+      borderColor: "border-pink-200",
+    },
+    {
+      id: "SHELLER_MILLER_PROCESSOR",
+      title: "Sheller/Miller/Processor",
+      description: "I process, shell, or mill agricultural products",
+      icon: <Factory className="w-8 h-8" />,
+      gradient: "from-gray-500 to-gray-600",
+      bgColor: "bg-gray-50",
+      borderColor: "border-gray-200",
+    },
+    {
+      id: "EXPORTER",
+      title: "Exporter",
+      description: "I export agricultural products to other countries",
+      icon: <Globe className="w-8 h-8" />,
+      gradient: "from-indigo-500 to-indigo-600",
+      bgColor: "bg-indigo-50",
+      borderColor: "border-indigo-200",
+    },
+    {
+      id: "STOCK_INVESTOR",
+      title: "Stock Investor",
+      description: "I invest in agricultural stocks or commodities",
+      icon: <PackageSearch className="w-8 h-8" />,
+      gradient: "from-teal-500 to-teal-600",
+      bgColor: "bg-teal-50",
+      borderColor: "border-teal-200",
     },
   ];
 

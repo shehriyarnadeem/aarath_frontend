@@ -3,6 +3,9 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { auth } from "../../../firebaseConfig";
+import { API_BASE_URL } from "../../../utils/helpers";
+import { signInWithCustomToken } from "firebase/auth";
 
 import { apiClient } from "../../../api/client";
 import Button from "../../../components/Button";
@@ -11,14 +14,16 @@ import { useAuth } from "../../../context/AuthContext";
 import LocationSelection from "../components/LocationSelection";
 import RoleSelection from "../components/RoleSelection";
 import WhatsappVerification from "../components/WhatsappVerification";
-import AccountTypeSelection from "../components/AccountTypeSelection";
-import PersonalDetails from "../components/PersonalDetails";
-import CompanyDetails from "../components/CompanyDetails";
+import ProfileCompletionForm from "../components/ProfileCompletionForm";
+import CategorySelection from "../components/CategorySelection";
 
 const OnboardingFlow = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
   const navigate = useNavigate();
   const { user, updateUserProfile } = useAuth();
 
@@ -30,14 +35,7 @@ const OnboardingFlow = () => {
     state: "",
     city: "",
     businessCategories: [],
-    accountType: "",
-    personal: { name: "", location: "", profilePicture: null },
-    company: {
-      companyName: "",
-      businessAddress: "",
-      businessRole: "",
-      companyPicture: null,
-    },
+    profileCompletion: { businessName: "" },
   });
 
   const totalSteps = 5;
@@ -75,26 +73,73 @@ const OnboardingFlow = () => {
     }));
   };
 
+  // Phone number validation helper
+  const isValidPhoneNumber = (number) => {
+    // Accepts +countrycode and 7-15 digits (e.g. +923001234567)
+    return /^\+\d{7,15}$/.test(number);
+  };
+
+  // Update handleWhatsappVerify to validate before request
   const handleWhatsappVerify = async () => {
+    if (!isValidPhoneNumber(formData.whatsapp)) {
+      toast.error(
+        "Please enter a valid phone number in international format (e.g. +923001234567)"
+      );
+      return;
+    }
     setVerificationLoading(true);
-    // TODO: Integrate real verification. For now, mock success after delay.
-    setTimeout(() => {
-      setFormData((prev) => ({ ...prev, whatsappVerified: true }));
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/auth/otp/verify-whatsapp`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ whatsapp: formData.whatsapp }),
+        }
+      );
+      const result = await response.json();
+      if (result.success) {
+        setOtpStep(true);
+        toast.success("OTP sent to your WhatsApp number.");
+      } else {
+        toast.error(result.error || "WhatsApp number already exists");
+      }
+    } catch (err) {
+      toast.error("Network error. Please try again.");
+    } finally {
       setVerificationLoading(false);
-      toast.success("WhatsApp number verified!");
-    }, 1000);
+    }
   };
 
-  const handleAccountTypeChange = (type) => {
-    setFormData((prev) => ({ ...prev, accountType: type }));
+  const handleOtpVerify = async () => {
+    setOtpLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/auth/otp/verify-otp-signup`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mobile: formData.whatsapp, otp }),
+        }
+      );
+      const result = await response.json();
+      if (result.success) {
+        // Only mark WhatsApp as verified, do NOT sign in to Firebase here
+        setFormData((prev) => ({ ...prev, whatsappVerified: true }));
+        setOtpStep(false);
+        toast.success("OTP verified!");
+      } else {
+        toast.error(result.error || "Invalid OTP");
+      }
+    } catch (err) {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setOtpLoading(false);
+    }
   };
 
-  const handlePersonalChange = (data) => {
-    setFormData((prev) => ({ ...prev, personal: data }));
-  };
-
-  const handleCompanyChange = (data) => {
-    setFormData((prev) => ({ ...prev, company: data }));
+  const handleProfileCompletionChange = (data) => {
+    setFormData((prev) => ({ ...prev, profileCompletion: data }));
   };
 
   const handleSubmit = async () => {
@@ -102,14 +147,27 @@ const OnboardingFlow = () => {
     try {
       // Prepare data for backend
       const payload = {
-        ...formData,
+        whatsapp: formData.whatsapp,
+        state: formData.state,
+        city: formData.city,
+        role: formData.role,
+        businessName: formData.profileCompletion.businessName,
+        email: user?.email || "",
+        businessCategories: formData.businessCategories,
         profileCompleted: true,
-        // Optionally handle file uploads separately
       };
-      const updatedProfile = await apiClient.users.update(user.uid, payload);
-      updateUserProfile(updatedProfile);
-      toast.success("Profile setup completed successfully!");
-      navigate("/dashboard");
+      const response = await apiClient.users.onboardingComplete(payload);
+      if (response && response.token) {
+        await signInWithCustomToken(auth, response.token); // Refresh session
+        updateUserProfile(response.user);
+        toast.success("Profile setup completed successfully!");
+        navigate("/dashboard");
+      } else if (response?.error?.includes("already exists")) {
+        toast.success("Account already exists. Logging you in...");
+        navigate("/dashboard");
+      } else {
+        throw new Error(response?.error || "Failed to create user and session");
+      }
     } catch (error) {
       console.error("Error completing onboarding:", error);
       toast.error("Failed to complete profile setup. Please try again.");
@@ -123,27 +181,13 @@ const OnboardingFlow = () => {
       case 1:
         return formData.whatsapp && formData.whatsappVerified;
       case 2:
-        return !!formData.role;
-      case 3:
         return formData.state !== "" && formData.city !== "";
+      case 3:
+        return !!formData.role;
       case 4:
-        return !!formData.accountType;
+        return !!formData.profileCompletion.businessName;
       case 5:
-        if (formData.accountType === "personal") {
-          return (
-            formData.personal.name &&
-            formData.personal.location &&
-            formData.personal.profilePicture
-          );
-        } else if (formData.accountType === "company") {
-          return (
-            formData.company.companyName &&
-            formData.company.businessAddress &&
-            formData.company.businessRole &&
-            formData.company.companyPicture
-          );
-        }
-        return false;
+        return formData.businessCategories.length > 0;
       default:
         return false;
     }
@@ -151,10 +195,10 @@ const OnboardingFlow = () => {
 
   const stepTitles = {
     1: "WhatsApp Verification",
-    2: "Role Selection",
-    3: "Location Details",
-    4: "Account Type",
-    5: "Details",
+    2: "Location Details",
+    3: "Role Selection",
+    4: "Profile Completion",
+    5: "Business Categories",
   };
 
   return (
@@ -224,23 +268,40 @@ const OnboardingFlow = () => {
             transition={{ duration: 0.3 }}
           >
             {currentStep === 1 && (
-              <WhatsappVerification
-                value={formData.whatsapp}
-                onChange={handleWhatsappChange}
-                onVerify={handleWhatsappVerify}
-                verified={formData.whatsappVerified}
-                loading={verificationLoading}
-              />
+              <>
+                <WhatsappVerification
+                  value={formData.whatsapp}
+                  onChange={handleWhatsappChange}
+                  onVerify={handleWhatsappVerify}
+                  verified={formData.whatsappVerified}
+                  loading={verificationLoading}
+                />
+                {otpStep && !formData.whatsappVerified && (
+                  <div className="mt-6 space-y-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Enter OTP
+                    </label>
+                    <input
+                      className="w-full border rounded px-3 py-2 tracking-widest text-center"
+                      type="text"
+                      maxLength={6}
+                      placeholder="6-digit OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                    />
+                    <Button
+                      onClick={handleOtpVerify}
+                      loading={otpLoading}
+                      className="w-full"
+                    >
+                      Verify OTP
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
 
             {currentStep === 2 && (
-              <RoleSelection
-                selectedRole={formData.role}
-                onRoleSelect={handleRoleSelect}
-              />
-            )}
-
-            {currentStep === 3 && (
               <LocationSelection
                 selectedState={formData.state}
                 selectedCity={formData.city}
@@ -249,25 +310,41 @@ const OnboardingFlow = () => {
               />
             )}
 
-            {currentStep === 4 && (
-              <AccountTypeSelection
-                value={formData.accountType}
-                onChange={handleAccountTypeChange}
+            {currentStep === 3 && (
+              <RoleSelection
+                selectedRole={formData.role}
+                onRoleSelect={handleRoleSelect}
               />
             )}
 
-            {currentStep === 5 &&
-              (formData.accountType === "personal" ? (
-                <PersonalDetails
-                  data={formData.personal}
-                  onChange={handlePersonalChange}
-                />
-              ) : (
-                <CompanyDetails
-                  data={formData.company}
-                  onChange={handleCompanyChange}
-                />
-              ))}
+            {currentStep === 4 && (
+              <ProfileCompletionForm
+                data={formData.profileCompletion}
+                onChange={handleProfileCompletionChange}
+                whatsapp={formData.whatsapp}
+                state={formData.state}
+                city={formData.city}
+                email={user?.email || ""}
+              />
+            )}
+
+            {currentStep === 5 && (
+              <CategorySelection
+                selectedCategories={formData.businessCategories}
+                onCategoryToggle={(categoryId) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    businessCategories: prev.businessCategories.includes(
+                      categoryId
+                    )
+                      ? prev.businessCategories.filter(
+                          (id) => id !== categoryId
+                        )
+                      : [...prev.businessCategories, categoryId],
+                  }));
+                }}
+              />
+            )}
           </motion.div>
 
           {/* Navigation */}

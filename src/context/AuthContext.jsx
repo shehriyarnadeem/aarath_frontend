@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
         try {
           // Fetch user profile from backend
           const profile = await apiClient.users.getById(firebaseUser.uid);
+          console.log(profile);
           setUserProfile(profile);
         } catch (error) {
           console.error("Error fetching user profile:", error);

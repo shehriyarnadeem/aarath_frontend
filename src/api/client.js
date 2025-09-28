@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import { auth } from "../firebaseConfig";
+import { API_BASE_URL } from "../utils/helpers";
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -60,12 +61,14 @@ export const apiClient = {
     update: (id, userData) => api.put(`/api/users/${id}`, userData),
     delete: (id) => api.delete(`/api/users/${id}`),
     checkProfileCompletion: (id) => api.get(`/api/users/${id}/profile-status`),
+    onboardingComplete: (userData) =>
+      api.post("/api/users/onboarding-complete/onboarding-complete", userData),
   },
 
   // Products endpoints
   products: {
     getAll: (params = {}) => api.get("/api/products", { params }),
-    create: (productData) => api.post("/api/products", productData),
+    create: (productData) => api.post("/api/products/create", productData),
     getById: (id) => api.get(`/api/products/${id}`),
     update: (id, productData) => api.put(`/api/products/${id}`, productData),
     delete: (id) => api.delete(`/api/products/${id}`),
@@ -73,6 +76,9 @@ export const apiClient = {
       api.get("/api/products/search", {
         params: { q: query, ...filters },
       }),
+    getByUser(userId) {
+      return api.get(`/api/products/user/${userId}`);
+    },
   },
 
   // Orders endpoints

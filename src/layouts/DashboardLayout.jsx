@@ -6,18 +6,29 @@ import {
   Bell,
   Plus,
   LogOut,
+  Package,
 } from "lucide-react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
 import Logo from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
+import ProductListingModal from "../features/dashboard/components/ProductListingModal";
+import MyProducts from "../features/dashboard/pages/MyProducts";
+import Marketplace from "../features/dashboard/pages/Marketplace";
+import Overview from "../features/dashboard/pages/Overview";
 
-const DashboardLayout = ({ children, activeTab = "home", onTabChange }) => {
+const DashboardLayout = ({ activeTab = "home", onTabChange }) => {
   const { logout, userProfile } = useAuth();
   const navigate = useNavigate();
+  const [isProductModalOpen, setProductModalOpen] = React.useState(false);
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
-  const navigationItems = [{ id: "home", label: "Home", icon: Home }];
+  const navigationItems = [
+    { id: "home", label: "Home", icon: Home },
+    { id: "marketplace", label: "Marketplace", icon: Package },
+    { id: "my-products", label: "My Products", icon: Package },
+  ];
 
   const handleLogout = async () => {
     try {
@@ -35,13 +46,36 @@ const DashboardLayout = ({ children, activeTab = "home", onTabChange }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Logo />
-
             <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">
-                <Bell className="w-5 h-5" />
+              {/* Hamburger for mobile */}
+              <button
+                className="md:hidden p-2 rounded-full text-gray-600 hover:text-primary-700 hover:bg-gray-100"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Open sidebar"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
               </button>
-              <button className="bg-primary-600 text-white p-2 rounded-full hover:bg-primary-700 transition-colors">
+              <button
+                className="bg-primary-600 text-white p-2 rounded-full hover:bg-primary-700 transition-colors hidden md:inline-flex"
+                onClick={() => setProductModalOpen(true)}
+                aria-label="Add Product"
+              >
                 <Plus className="w-5 h-5" />
+              </button>
+              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full hidden md:inline-flex">
+                <Bell className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -49,18 +83,59 @@ const DashboardLayout = ({ children, activeTab = "home", onTabChange }) => {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white shadow-sm border-r border-gray-200 min-h-screen flex flex-col">
+        {/* Sidebar - fixed for all screens */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black bg-opacity-30 md:hidden"
+            role="button"
+            tabIndex={0}
+            aria-label="Close sidebar overlay"
+            onClick={() => setSidebarOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+                setSidebarOpen(false);
+              }
+            }}
+          />
+        )}
+        <aside
+          className={`fixed top-0 left-0 h-screen w-64 bg-white shadow-sm border-r border-gray-200 flex flex-col z-50 md:translate-x-0 md:fixed md:block transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+        >
+          {/* Close button for mobile */}
+          <div className="flex items-center justify-between md:hidden px-4 py-3 border-b border-gray-200">
+            <Logo />
+            <button
+              className="p-2 rounded-full text-gray-600 hover:text-primary-700 hover:bg-gray-100"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Close sidebar"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
           <nav className="mt-8 px-4 flex-1">
             <ul className="space-y-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
-
                 return (
                   <li key={item.id}>
                     <button
-                      onClick={() => onTabChange && onTabChange(item.id)}
+                      onClick={() => {
+                        onTabChange && onTabChange(item.id);
+                        setSidebarOpen(false); // close on mobile nav
+                      }}
                       className={`w-full flex items-center px-4 py-3 rounded-xl transition-colors ${
                         isActive
                           ? "bg-primary-100 text-primary-700 font-medium"
@@ -75,7 +150,6 @@ const DashboardLayout = ({ children, activeTab = "home", onTabChange }) => {
               })}
             </ul>
           </nav>
-
           {/* User Profile & Logout Section */}
           <div className="p-4 border-t border-gray-200">
             {/* User Profile Info */}
@@ -111,10 +185,22 @@ const DashboardLayout = ({ children, activeTab = "home", onTabChange }) => {
             </button>
           </div>
         </aside>
-
         {/* Main Content */}
-        <main className="flex-1 overflow-hidden">{children}</main>
+        <main className="flex-1 overflow-hidden md:ml-64">
+          {activeTab === "home" && (
+            <Overview onAddProduct={() => setProductModalOpen(true)} />
+          )}
+          {activeTab === "marketplace" && <Marketplace />}
+          {activeTab === "my-products" && <MyProducts />}
+        </main>
       </div>
+      <ProductListingModal
+        isOpen={isProductModalOpen}
+        onClose={() => setProductModalOpen(false)}
+        onSuccess={() => {
+          /* Optionally refresh product list here */
+        }}
+      />
     </div>
   );
 };

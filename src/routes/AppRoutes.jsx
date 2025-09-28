@@ -139,14 +139,7 @@ const AppContent = () => {
       />
 
       {/* Onboarding Routes */}
-      <Route
-        path="/onboarding"
-        element={
-          <ProtectedRoute>
-            <OnboardingFlow />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/onboarding" element={<OnboardingFlow />} />
 
       {/* Dashboard Routes */}
       <Route
