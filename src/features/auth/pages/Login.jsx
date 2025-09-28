@@ -8,7 +8,8 @@ import Button from "../../../components/Button";
 import Logo from "../../../components/Logo";
 import { auth, googleProvider } from "../../../firebaseConfig";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
 const Login = ({ onSuccess, onSwitchToRegister }) => {
   const navigate = useNavigate();

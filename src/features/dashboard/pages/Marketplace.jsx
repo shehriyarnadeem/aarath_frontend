@@ -1,265 +1,310 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Search,
-  Filter,
-  MapPin,
-  User,
-  Package,
-  Star,
-  ArrowRight,
-} from "lucide-react";
 import Button from "../../../components/Button";
+import { Search, Filter } from "lucide-react";
 
-// Dummy product data for marketplace
-const DUMMY_PRODUCTS = [
-  {
-    id: "1",
-    title: "Premium Basmati Rice",
-    description:
-      "High quality basmati rice, freshly harvested. Perfect for export and local consumption.",
-    category: "Rice",
-    price: 3200,
-    unit: "40KG",
-    quantity: 5000,
-    location: "Lahore, Punjab",
-    images: [
-      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80",
-    ],
-    seller: {
-      name: "Ahmad Farming Co.",
-      avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-      rating: 4.8,
-    },
-    timeAgo: "2 hours ago",
-  },
-  {
-    id: "2",
-    title: "Organic Wheat",
-    description: "Certified organic wheat, ideal for flour mills and bakeries.",
-    category: "Wheat",
-    price: 2500,
-    unit: "50KG",
-    quantity: 3000,
-    location: "Multan, Punjab",
-    images: [
-      "https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=400&q=80",
-    ],
-    seller: {
-      name: "Green Valley Farm",
-      avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-      rating: 4.9,
-    },
-    timeAgo: "1 day ago",
-  },
-  {
-    id: "3",
-    title: "Fresh Tomatoes",
-    description: "Juicy, red tomatoes direct from farm. Bulk orders available.",
-    category: "Vegetables",
-    price: 150,
-    unit: "KG",
-    quantity: 800,
-    location: "Karachi, Sindh",
-    images: [
-      "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=400&q=80",
-    ],
-    seller: {
-      name: "Fresh Produce Ltd.",
-      avatar: "https://randomuser.me/api/portraits/men/65.jpg",
-      rating: 4.7,
-    },
-    timeAgo: "3 hours ago",
-  },
-  // Add more dummy products for realism
-];
-
-const CATEGORIES = [
-  "All",
-  "Rice",
+const categories = [
+  "All Products",
   "Wheat",
+  "Rice",
+  "Maize",
+  "Sesame",
+  "Pulses",
   "Vegetables",
   "Fruits",
-  "Spices",
-  "Oilseeds",
-  "Cotton",
-  "Sugarcane",
+  "Seeds",
 ];
-const LOCATIONS = [
-  "All",
-  "Punjab",
-  "Sindh",
-  "KPK",
-  "Balochistan",
-  "Gilgit-Baltistan",
-  "Azad Kashmir",
+
+const dummyProducts = [
+  {
+    id: 1,
+    title: "Premium Wheat",
+    category: "Wheat",
+    price: "₹2,500",
+    image:
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80",
+    seller: "Green Farms",
+    location: "Punjab",
+    timeAgo: "2h ago",
+    status: "Open to Bid",
+    condition: "Excellent",
+  },
+  {
+    id: 2,
+    title: "Basmati Rice",
+    category: "Rice",
+    price: "₹3,200",
+    image:
+      "https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=400&q=80",
+    seller: "Rice Traders",
+    location: "Sindh",
+    timeAgo: "1h ago",
+    status: "Buy Now",
+    condition: "New",
+  },
+  {
+    id: 3,
+    title: "Maize Feed",
+    category: "Maize",
+    price: "₹1,800",
+    image:
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80",
+    seller: "AgroMart",
+    location: "KP",
+    timeAgo: "30m ago",
+    status: "Auction",
+    condition: "Very Good",
+  },
+  {
+    id: 4,
+    title: "Sesame Seeds",
+    category: "Sesame",
+    price: "₹2,100",
+    image:
+      "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80",
+    seller: "SeedCo",
+    location: "Balochistan",
+    timeAgo: "10m ago",
+    status: "Open to Bid",
+    condition: "Good",
+  },
+  {
+    id: 5,
+    title: "Organic Pulses",
+    category: "Pulses",
+    price: "₹2,800",
+    image:
+      "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80",
+    seller: "PulseHub",
+    location: "Punjab",
+    timeAgo: "5m ago",
+    status: "Buy Now",
+    condition: "New",
+  },
+  {
+    id: 6,
+    title: "Fresh Vegetables",
+    category: "Vegetables",
+    price: "₹1,200",
+    image:
+      "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=400&q=80",
+    seller: "VeggieMart",
+    location: "Sindh",
+    timeAgo: "3h ago",
+    status: "Auction",
+    condition: "Excellent",
+  },
 ];
+
+const filters = {
+  status: ["Buy Now", "Auction", "Open to Bid"],
+  condition: ["New", "Excellent", "Very Good", "Good"],
+};
 
 const Marketplace = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedLocation, setSelectedLocation] = useState("All");
-  const [sortBy, setSortBy] = useState("recent");
+  const [selectedCategory, setSelectedCategory] = useState("All Products");
+  const [search, setSearch] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState([]);
+  const [selectedCondition, setSelectedCondition] = useState([]);
 
-  // Filter logic
-  const filteredProducts = DUMMY_PRODUCTS.filter((product) => {
-    const matchesSearch =
-      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "All" || product.category === selectedCategory;
-    const matchesLocation =
-      selectedLocation === "All" || product.location.includes(selectedLocation);
-    return matchesSearch && matchesCategory && matchesLocation;
+  // Filter products
+  const filteredProducts = dummyProducts.filter((p) => {
+    const matchCategory =
+      selectedCategory === "All Products" || p.category === selectedCategory;
+    const matchSearch =
+      !search || p.title.toLowerCase().includes(search.toLowerCase());
+    const matchStatus =
+      selectedStatus.length === 0 || selectedStatus.includes(p.status);
+    const matchCondition =
+      selectedCondition.length === 0 || selectedCondition.includes(p.condition);
+    return matchCategory && matchSearch && matchStatus && matchCondition;
   });
 
-  // Sort logic
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    if (sortBy === "recent") return 0; // Dummy, all are recent
-    if (sortBy === "priceLow") return a.price - b.price;
-    if (sortBy === "priceHigh") return b.price - a.price;
-    if (sortBy === "rating") return b.seller.rating - a.seller.rating;
-    return 0;
-  });
-
+  // Sidebar filter UI
   return (
-    <div className="p-8 min-h-screen bg-gradient-to-br from-green-50 via-white to-yellow-50">
-      <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center">
-            <Package className="w-9 h-9 mr-3 text-primary-600" /> Marketplace
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Discover, trade, and bid on the best agricultural products from
-            trusted sellers across Pakistan.
+    <div className="bg-gray-50 min-h-screen">
+      {/* Top Banner */}
+      <div className="bg-gradient-to-r from-primary-600 to-secondary-500 py-8 px-4 sm:px-8 text-white">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-2">Marketplace</h1>
+          <p className="text-lg mb-4">
+            Discover, bid, and buy agricultural products from trusted sellers
+            across Pakistan.
           </p>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <span className="bg-primary-700/80 rounded-full px-3 py-1">
+              10,000+ Active Listings
+            </span>
+            <span className="bg-primary-700/80 rounded-full px-3 py-1">
+              Live Auctions
+            </span>
+            <span className="bg-primary-700/80 rounded-full px-3 py-1">
+              Verified Sellers
+            </span>
+            <span className="bg-primary-700/80 rounded-full px-3 py-1">
+              Nationwide Delivery
+            </span>
+          </div>
         </div>
-        <Button variant="primary" size="lg" className="flex items-center">
-          <ArrowRight className="w-5 h-5 mr-2" /> Post a Product
-        </Button>
       </div>
       {/* Search & Filters */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8 flex flex-col lg:flex-row gap-4 items-center">
-        <div className="flex-1 flex items-center gap-3">
-          <Search className="w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search products, e.g. wheat, rice, tomatoes..."
-            className="input-field w-full"
-          />
-        </div>
-        <div className="flex gap-3">
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="input-field"
-          >
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-          <select
-            value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
-            className="input-field"
-          >
-            {LOCATIONS.map((loc) => (
-              <option key={loc} value={loc}>
-                {loc}
-              </option>
-            ))}
-          </select>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="input-field"
-          >
-            <option value="recent">Most Recent</option>
-            <option value="priceLow">Price: Low to High</option>
-            <option value="priceHigh">Price: High to Low</option>
-            <option value="rating">Seller Rating</option>
-          </select>
-          <Button variant="outline" className="flex items-center">
-            <Filter className="w-5 h-5 mr-2" /> More Filters
-          </Button>
-        </div>
-      </div>
-      {/* Product Grid */}
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
-        {sortedProducts.length === 0 ? (
-          <div className="col-span-full text-center py-20 text-gray-400">
-            <Package className="w-12 h-12 mx-auto mb-4" />
-            <div className="mb-2 font-semibold">No products found.</div>
-            <div>Try adjusting your search or filters.</div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 flex flex-col md:flex-row gap-8">
+        {/* Sidebar Filters */}
+        <aside className="w-full md:w-64 flex-shrink-0">
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 className="text-lg font-bold text-primary-700 mb-4">
+              Categories
+            </h2>
+            <ul className="space-y-2">
+              {categories.map((cat) => (
+                <li key={cat}>
+                  <button
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors font-medium ${
+                      selectedCategory === cat
+                        ? "bg-primary-100 text-primary-700"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                    onClick={() => setSelectedCategory(cat)}
+                  >
+                    {cat}
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
-        ) : (
-          sortedProducts.map((product) => (
-            <motion.div
-              key={product.id}
-              className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 flex flex-col"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              whileHover={{ scale: 1.03 }}
-            >
-              <div className="mb-4 relative">
-                <img
-                  src={product.images[0]}
-                  alt={product.title}
-                  className="w-full h-40 object-cover rounded-xl border"
-                />
-                <span className="absolute top-3 left-3 bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-semibold">
-                  {product.category}
-                </span>
-              </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2 truncate">
-                {product.title}
-              </h2>
-              <p className="text-gray-600 mb-3 line-clamp-2">
-                {product.description}
-              </p>
-              <div className="flex items-center mb-3">
-                <span className="font-semibold text-primary-700 mr-2">
-                  {product.price.toLocaleString()} PKR
-                </span>
-                <span className="text-gray-500">/{product.unit}</span>
-                <span className="ml-4 text-xs text-gray-400">
-                  Available: {product.quantity} {product.unit}
-                </span>
-              </div>
-              <div className="flex items-center mb-3">
-                <MapPin className="w-4 h-4 mr-1 text-primary-500" />
-                <span className="text-sm text-gray-700">
-                  {product.location}
-                </span>
-                <span className="ml-auto text-xs text-gray-400">
-                  {product.timeAgo}
-                </span>
-              </div>
-              <div className="flex items-center mb-3">
-                <img
-                  src={product.seller.avatar}
-                  alt={product.seller.name}
-                  className="w-8 h-8 rounded-full border mr-2"
-                />
-                <span className="font-medium text-gray-900">
-                  {product.seller.name}
-                </span>
-                <Star className="w-4 h-4 text-yellow-400 ml-2" />
-                <span className="text-sm text-gray-600">
-                  {product.seller.rating}
-                </span>
-              </div>
-              <Button variant="primary" className="mt-auto w-full">
-                Trade / Bid
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 className="text-lg font-bold text-primary-700 mb-4">Status</h2>
+            <div className="space-y-2">
+              {filters.status.map((status) => (
+                <label key={status} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedStatus.includes(status)}
+                    onChange={() => {
+                      setSelectedStatus((prev) =>
+                        prev.includes(status)
+                          ? prev.filter((s) => s !== status)
+                          : [...prev, status]
+                      );
+                    }}
+                  />
+                  <span>{status}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-lg font-bold text-primary-700 mb-4">
+              Condition
+            </h2>
+            <div className="space-y-2">
+              {filters.condition.map((cond) => (
+                <label key={cond} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedCondition.includes(cond)}
+                    onChange={() => {
+                      setSelectedCondition((prev) =>
+                        prev.includes(cond)
+                          ? prev.filter((c) => c !== cond)
+                          : [...prev, cond]
+                      );
+                    }}
+                  />
+                  <span>{cond}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </aside>
+        {/* Main Content */}
+        <section className="flex-1">
+          {/* Search Bar & Top Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+            <div className="flex items-center w-full sm:w-auto gap-2">
+              <input
+                type="text"
+                className="input-field w-full sm:w-80"
+                placeholder="Search products, sellers, etc."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <Button variant="outline" className="px-4 py-2">
+                <Search className="w-5 h-5 mr-2" />
+                Search
               </Button>
-            </motion.div>
-          ))
-        )}
+              <Button variant="ghost" className="px-4 py-2">
+                <Filter className="w-5 h-5 mr-2" />
+                Filters
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-sm text-gray-600">
+                {filteredProducts.length} Products Found
+              </span>
+              <select className="input-field">
+                <option>Most Relevant</option>
+                <option>Lowest Price</option>
+                <option>Highest Price</option>
+                <option>Newest</option>
+              </select>
+            </div>
+          </div>
+          {/* Product Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProducts.map((product) => (
+              <motion.div
+                key={product.id}
+                className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 flex flex-col"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="relative mb-3">
+                  <img
+                    src={product.image}
+                    alt={product.title}
+                    className="w-full h-40 object-cover rounded-xl"
+                  />
+                  <span className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-3 py-1 rounded-full shadow">
+                    {product.status}
+                  </span>
+                  <span className="absolute top-2 right-2 bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">
+                    {product.condition}
+                  </span>
+                </div>
+                <h3 className="font-bold text-lg text-gray-900 mb-1 truncate">
+                  {product.title}
+                </h3>
+                <div className="flex items-center text-sm text-gray-600 mb-2">
+                  <span className="font-medium mr-2">{product.category}</span>
+                  <span className="mx-2">|</span>
+                  <span>{product.location}</span>
+                  <span className="mx-2">|</span>
+                  <span>{product.timeAgo}</span>
+                </div>
+                <div className="font-bold text-primary-700 text-xl mb-2">
+                  {product.price}
+                </div>
+                <div className="flex items-center mb-2">
+                  <span className="text-xs text-gray-500">Seller:</span>
+                  <span className="ml-2 text-sm font-medium text-gray-700">
+                    {product.seller}
+                  </span>
+                </div>
+                <div className="flex gap-2 mt-auto">
+                  <Button size="sm" className="flex-1">
+                    Contact Seller
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1">
+                    View Details
+                  </Button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );
