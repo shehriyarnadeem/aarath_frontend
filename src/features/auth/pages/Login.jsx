@@ -8,8 +8,7 @@ import Button from "../../../components/Button";
 import Logo from "../../../components/Logo";
 import { auth, googleProvider } from "../../../firebaseConfig";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 const Login = ({ onSuccess, onSwitchToRegister }) => {
   const navigate = useNavigate();
@@ -19,7 +18,7 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
-
+  console.log(API_BASE_URL);
   // Send OTP using backend
   const handleSendOtp = async () => {
     setIsLoading(true);
@@ -31,7 +30,7 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
         body: JSON.stringify({ mobile }),
       });
       const result = await response.json();
-      if (response.ok && result.success) {
+      if (result.success) {
         setOtpSent(true);
         setIsLoading(false);
         setError("");
@@ -56,9 +55,11 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
         body: JSON.stringify({ mobile, otp }),
       });
       const result = await response.json();
-      if (response.ok && result.success && result.token) {
+      console.log(result);
+      if (result.success && result.token) {
         // Sign in to Firebase with custom token
         const auth = getAuth();
+        console.log(getAuth());
         await signInWithCustomToken(auth, result.token);
         setIsLoading(false);
         setError("");
