@@ -16,6 +16,13 @@ const ProductListingModal = ({ isOpen, onClose, onSuccess }) => {
     quantity: "",
     unit: UNITS[0],
     images: [],
+    auction_live: false, // Boolean toggle for auction vs marketplace
+    // Marketplace fields
+    price: "",
+    priceType: "fixed",
+    // Auction fields
+    startingBid: "",
+    auctionDuration: "24",
   });
   const [imagePreviews, setImagePreviews] = useState([]);
   const [errors, setErrors] = useState({});
@@ -64,6 +71,22 @@ const ProductListingModal = ({ isOpen, onClose, onSuccess }) => {
     if (!form.unit) errs.unit = "Unit is required.";
     if (!form.images || form.images.length === 0)
       errs.images = "At least one image is required.";
+
+    // Validate pricing based on auction_live toggle
+    if (!form.auction_live) {
+      if (!form.price || isNaN(form.price) || parseFloat(form.price) <= 0) {
+        errs.price = "Valid price is required for marketplace listing.";
+      }
+    } else {
+      if (
+        !form.startingBid ||
+        isNaN(form.startingBid) ||
+        parseFloat(form.startingBid) <= 0
+      ) {
+        errs.startingBid = "Valid starting bid is required for auction.";
+      }
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -89,12 +112,12 @@ const ProductListingModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 px-2 sm:px-0 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4 overflow-y-auto">
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white rounded-2xl shadow-2xl p-4 sm:p-8 w-full max-w-full sm:max-w-lg relative"
+        className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-2xl lg:max-w-4xl relative my-8 max-h-[90vh] overflow-y-auto"
       >
         {/* Close button for mobile UX */}
         <button
@@ -120,45 +143,110 @@ const ProductListingModal = ({ isOpen, onClose, onSuccess }) => {
         <h2 className="text-2xl font-bold mb-6 text-primary-700">
           Add Product Listing
         </h2>
-        <form className="space-y-5" onSubmit={handleSubmit}>
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Category</label>
-            <select
-              name="category"
-              value={form.category}
-              onChange={handleChange}
-              className="input-field"
-            >
-              <option value="">Select category</option>
-              {userCategories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-            {errors.category && (
-              <div className="text-red-500 text-xs mt-1">{errors.category}</div>
-            )}
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          {/* Category and Title - Side by side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Category</label>
+              <select
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                className="input-field"
+              >
+                <option value="">Select category</option>
+                {userCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              {errors.category && (
+                <div className="text-red-500 text-xs mt-1">
+                  {errors.category}
+                </div>
+              )}
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Product Title
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={form.title}
+                onChange={handleChange}
+                placeholder="e.g., Premium Basmati Rice"
+                className="input-field"
+              />
+              {errors.title && (
+                <div className="text-red-500 text-xs mt-1">{errors.title}</div>
+              )}
+            </div>
           </div>
-          {/* Title */}
+
+          {/* Listing Type Toggle */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Product Title
+            <label className="block text-sm font-medium mb-3">
+              Where do you want to list this product?
             </label>
-            <input
-              type="text"
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              className="input-field"
-              maxLength={100}
-              placeholder="Enter product title"
-            />
-            {errors.title && (
-              <div className="text-red-500 text-xs mt-1">{errors.title}</div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setForm((prev) => ({ ...prev, auction_live: false }))
+                }
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  !form.auction_live
+                    ? "border-green-500 bg-green-50 text-green-700"
+                    : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="text-2xl">🏪</div>
+                  <div className="font-semibold">Marketplace</div>
+                  <div className="text-xs text-center">
+                    Direct sale with fixed or negotiable price
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setForm((prev) => ({ ...prev, auction_live: true }))
+                }
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  form.auction_live
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="text-2xl">🔨</div>
+                  <div className="font-semibold">Auction</div>
+                  <div className="text-xs text-center">
+                    Let buyers compete with bids
+                  </div>
+                </div>
+              </button>
+            </div>
+            {form.auction_live && (
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-start space-x-2">
+                  <div className="text-blue-500 mt-0.5">ℹ️</div>
+                  <div className="text-sm text-blue-700">
+                    <strong>Auction Process:</strong> Your product will go live
+                    for bidding. If no winner is found after the auction ends,
+                    it will automatically move to the marketplace for direct
+                    sale.
+                  </div>
+                </div>
+              </div>
             )}
           </div>
+
           {/* Description */}
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -217,6 +305,84 @@ const ProductListingModal = ({ isOpen, onClose, onSuccess }) => {
               )}
             </div>
           </div>
+
+          {/* Pricing - Conditional based on listing type */}
+          {!form.auction_live && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Price per {form.unit || "unit"} (PKR)
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  value={form.price || ""}
+                  onChange={handleChange}
+                  placeholder="e.g., 50000"
+                  className="input-field"
+                />
+                {errors.price && (
+                  <div className="text-red-500 text-xs mt-1">
+                    {errors.price}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Pricing Type
+                </label>
+                <select
+                  name="priceType"
+                  value={form.priceType || "fixed"}
+                  onChange={handleChange}
+                  className="input-field"
+                >
+                  <option value="fixed">Fixed Price</option>
+                  <option value="negotiable">Negotiable</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {form.auction_live && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Starting Bid (PKR)
+                </label>
+                <input
+                  type="number"
+                  name="startingBid"
+                  value={form.startingBid || ""}
+                  onChange={handleChange}
+                  placeholder="e.g., 40000"
+                  className="input-field"
+                />
+                {errors.startingBid && (
+                  <div className="text-red-500 text-xs mt-1">
+                    {errors.startingBid}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Auction Duration
+                </label>
+                <select
+                  name="auctionDuration"
+                  value={form.auctionDuration || "24"}
+                  onChange={handleChange}
+                  className="input-field"
+                >
+                  <option value="12">12 Hours</option>
+                  <option value="24">24 Hours</option>
+                  <option value="48">48 Hours</option>
+                  <option value="72">72 Hours</option>
+                </select>
+              </div>
+            </div>
+          )}
+
           {/* Images */}
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -229,13 +395,13 @@ const ProductListingModal = ({ isOpen, onClose, onSuccess }) => {
               onChange={handleImageUpload}
               className="input-field"
             />
-            <div className="flex space-x-2 mt-2">
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 mt-3">
               {imagePreviews.map((src, idx) => (
                 <img
                   key={idx}
                   src={src}
                   alt="Preview"
-                  className="w-16 h-16 object-cover rounded-lg border"
+                  className="w-full aspect-square object-cover rounded-lg border hover:border-primary-500 transition-colors"
                 />
               ))}
             </div>
@@ -253,7 +419,7 @@ const ProductListingModal = ({ isOpen, onClose, onSuccess }) => {
               Cancel
             </Button>
             <Button type="submit" loading={isSubmitting}>
-              Save Listing
+              {form.auction_live ? "Create Auction" : "List in Marketplace"}
             </Button>
           </div>
         </form>

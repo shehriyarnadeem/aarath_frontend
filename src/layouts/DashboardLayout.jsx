@@ -1,33 +1,37 @@
-import {
-  Home,
-  Search,
-  MessageCircle,
-  User,
-  Bell,
-  Plus,
-  LogOut,
-  Package,
-} from "lucide-react";
+import { Home, User, Bell, Plus, LogOut, Package, Gavel } from "lucide-react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
 import Logo from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
 import ProductListingModal from "../features/dashboard/components/ProductListingModal";
-import MyProducts from "../features/dashboard/pages/MyProducts";
-import Marketplace from "../features/dashboard/pages/Marketplace";
-import Overview from "../features/dashboard/pages/Overview";
 
-const DashboardLayout = ({ activeTab = "home", onTabChange }) => {
+const DashboardLayout = ({ children }) => {
   const { logout, userProfile } = useAuth();
   const navigate = useNavigate();
   const [isProductModalOpen, setProductModalOpen] = React.useState(false);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
   const navigationItems = [
-    { id: "home", label: "Home", icon: Home },
-    { id: "marketplace", label: "Marketplace", icon: Package },
-    { id: "my-products", label: "My Products", icon: Package },
+    { id: "home", label: "Home", icon: Home, path: "/dashboard" },
+    {
+      id: "marketplace",
+      label: "Marketplace",
+      icon: Package,
+      path: "/dashboard/marketplace",
+    },
+    {
+      id: "auction",
+      label: "Auction Room",
+      icon: Gavel,
+      path: "/dashboard/auction",
+    },
+    {
+      id: "my-products",
+      label: "My Products",
+      icon: Package,
+      path: "/dashboard/my-products",
+    },
   ];
 
   const handleLogout = async () => {
@@ -128,12 +132,12 @@ const DashboardLayout = ({ activeTab = "home", onTabChange }) => {
             <ul className="space-y-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = activeTab === item.id;
+                const isActive = window.location.pathname === item.path;
                 return (
                   <li key={item.id}>
                     <button
                       onClick={() => {
-                        onTabChange && onTabChange(item.id);
+                        navigate(item.path);
                         setSidebarOpen(false); // close on mobile nav
                       }}
                       className={`w-full flex items-center px-4 py-3 rounded-xl transition-colors ${
@@ -154,14 +158,20 @@ const DashboardLayout = ({ activeTab = "home", onTabChange }) => {
           <div className="p-4 border-t border-gray-200">
             {/* User Profile Info */}
             {userProfile && (
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <button
+                onClick={() => {
+                  navigate("/profile");
+                  setSidebarOpen(false);
+                }}
+                className="w-full mb-4 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
+              >
                 <div className="flex items-center">
-                  <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                  <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium group-hover:bg-primary-600 transition-colors">
                     {userProfile.name
                       ? userProfile.name.charAt(0).toUpperCase()
                       : "U"}
                   </div>
-                  <div className="ml-3 flex-1 min-w-0">
+                  <div className="ml-3 flex-1 min-w-0 text-left">
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {userProfile.name || "User"}
                     </p>
@@ -171,8 +181,9 @@ const DashboardLayout = ({ activeTab = "home", onTabChange }) => {
                         : "Member"}
                     </p>
                   </div>
+                  <User className="w-4 h-4 text-gray-400 group-hover:text-primary-600 transition-colors" />
                 </div>
-              </div>
+              </button>
             )}
 
             {/* Logout Button */}
@@ -186,13 +197,7 @@ const DashboardLayout = ({ activeTab = "home", onTabChange }) => {
           </div>
         </aside>
         {/* Main Content */}
-        <main className="flex-1 overflow-hidden md:ml-64">
-          {activeTab === "home" && (
-            <Overview onAddProduct={() => setProductModalOpen(true)} />
-          )}
-          {activeTab === "marketplace" && <Marketplace />}
-          {activeTab === "my-products" && <MyProducts />}
-        </main>
+        <main className="flex-1 overflow-hidden md:ml-64">{children}</main>
       </div>
       <ProductListingModal
         isOpen={isProductModalOpen}

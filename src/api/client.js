@@ -61,6 +61,7 @@ export const apiClient = {
     update: (id, userData) => api.put(`/api/users/${id}`, userData),
     delete: (id) => api.delete(`/api/users/${id}`),
     checkProfileCompletion: (id) => api.get(`/api/users/${id}/profile-status`),
+    getProfileStats: (id) => api.get(`/api/users/${id}/profile-stats`),
     onboardingComplete: (userData) =>
       api.post("/api/users/onboarding-complete/onboarding-complete", userData),
   },
@@ -79,6 +80,17 @@ export const apiClient = {
     getByUser(userId) {
       return api.get(`/api/products/user/${userId}`);
     },
+    // Get user's own products
+    getMyProducts: () => api.get("/api/products/my-products"),
+    // Get auction products
+    getAuctions: (status = null) => {
+      const params = { auction_live: "true" };
+      if (status) params.status = status;
+      return api.get("/api/products", { params });
+    },
+    // Get marketplace products
+    getMarketplace: () =>
+      api.get("/api/products", { params: { auction_live: "false" } }),
   },
 
   // Orders endpoints

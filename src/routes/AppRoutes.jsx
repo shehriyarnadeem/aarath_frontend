@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Toaster } from "react-hot-toast";
 import {
   BrowserRouter as Router,
@@ -13,6 +13,10 @@ import Login from "../features/auth/pages/Login";
 import Register from "../features/auth/pages/Register";
 import Overview from "../features/dashboard/pages/Overview";
 import ProductSearch from "../features/dashboard/pages/ProductSearch";
+import AuctionRoom from "../features/dashboard/pages/AuctionRoom";
+import Marketplace from "../features/dashboard/pages/Marketplace";
+import MyProducts from "../features/dashboard/pages/MyProducts";
+import UserProfile from "../features/dashboard/pages/UserProfile";
 import Home from "../features/landing/pages/Home";
 import OnboardingFlow from "../features/onboarding/pages/OnboardingFlow";
 import AuthLayout from "../layouts/AuthLayout";
@@ -70,8 +74,6 @@ const PublicRoute = ({ children }) => {
 };
 
 const AppContent = () => {
-  const [activeTab, setActiveTab] = useState("home");
-
   const handleGetStarted = () => {
     // Navigate to auth
     window.location.href = "/auth/login";
@@ -146,11 +148,15 @@ const AppContent = () => {
         path="/dashboard/*"
         element={
           <ProtectedRoute>
-            <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab}>
+            <DashboardLayout>
               <Routes>
                 <Route path="/" element={<Overview />} />
                 <Route path="/overview" element={<Overview />} />
                 <Route path="/search" element={<ProductSearch />} />
+                <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/my-products" element={<MyProducts />} />
+                <Route path="/profile" element={<UserProfile />} />
+                <Route path="/auction" element={<AuctionRoom />} />
               </Routes>
             </DashboardLayout>
           </ProtectedRoute>
