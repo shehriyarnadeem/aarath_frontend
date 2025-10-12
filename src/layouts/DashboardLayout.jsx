@@ -50,10 +50,17 @@ const DashboardLayout = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Logo />
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <button
+                className="bg-primary-600 text-white p-2 rounded-full hover:bg-primary-700 transition-colors order-1 md:order-2"
+                onClick={() => setProductModalOpen(true)}
+                aria-label="Add Product"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
               {/* Hamburger for mobile */}
               <button
-                className="md:hidden p-2 rounded-full text-gray-600 hover:text-primary-700 hover:bg-gray-100"
+                className="md:hidden p-2 rounded-full text-gray-600 hover:text-primary-700 hover:bg-gray-100 order-2 md:order-1"
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open sidebar"
               >
@@ -70,13 +77,6 @@ const DashboardLayout = ({ children }) => {
                     d="M4 6h16M4 12h16M4 18h16"
                   />
                 </svg>
-              </button>
-              <button
-                className="bg-primary-600 text-white p-2 rounded-full hover:bg-primary-700 transition-colors hidden md:inline-flex"
-                onClick={() => setProductModalOpen(true)}
-                aria-label="Add Product"
-              >
-                <Plus className="w-5 h-5" />
               </button>
               <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full hidden md:inline-flex">
                 <Bell className="w-5 h-5" />
