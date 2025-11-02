@@ -1,5 +1,14 @@
 import { useState, useEffect } from "react";
 
+// Export real-time auction hooks
+export {
+  useRealtimeAuction,
+  useBidding,
+  useAuctionTimer,
+  useOnlineParticipants,
+  useAuctionStats,
+} from "./useRealtimeAuction";
+
 // Custom hook for managing local storage
 export const useLocalStorage = (key, initialValue) => {
   const [storedValue, setStoredValue] = useState(() => {

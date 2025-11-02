@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../../../firebaseConfig";
@@ -35,11 +35,24 @@ const OnboardingFlow = () => {
     state: "",
     city: "",
     businessCategories: [],
-    profileCompletion: { businessName: "" },
+    profileCompletion: { businessName: "", email: "" },
   });
 
   const totalSteps = 5;
   const progressPercentage = (currentStep / totalSteps) * 100;
+
+  // Initialize email from Firebase user when component mounts
+  useEffect(() => {
+    if (user?.email && !formData.profileCompletion.email) {
+      setFormData((prev) => ({
+        ...prev,
+        profileCompletion: {
+          ...prev.profileCompletion,
+          email: user.email,
+        },
+      }));
+    }
+  }, [user?.email, formData.profileCompletion.email]);
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -152,7 +165,7 @@ const OnboardingFlow = () => {
         city: formData.city,
         role: formData.role,
         businessName: formData.profileCompletion.businessName,
-        email: user?.email || "",
+        email: formData.profileCompletion.email,
         businessCategories: formData.businessCategories,
         profileCompleted: true,
       };
@@ -185,7 +198,10 @@ const OnboardingFlow = () => {
       case 3:
         return !!formData.role;
       case 4:
-        return !!formData.profileCompletion.businessName;
+        return (
+          !!formData.profileCompletion.businessName &&
+          !!formData.profileCompletion.email
+        );
       case 5:
         return formData.businessCategories.length > 0;
       default:
@@ -324,7 +340,6 @@ const OnboardingFlow = () => {
                 whatsapp={formData.whatsapp}
                 state={formData.state}
                 city={formData.city}
-                email={user?.email || ""}
               />
             )}
 

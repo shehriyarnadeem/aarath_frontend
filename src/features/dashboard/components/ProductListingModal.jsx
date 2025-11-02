@@ -418,7 +418,7 @@ const ProductListingModal = ({ isOpen, onClose, onSuccess }) => {
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" loading={isSubmitting}>
+            <Button type="submit" loading={isSubmitting} onClick={handleSubmit}>
               {form.auction_live ? "Create Auction" : "List in Marketplace"}
             </Button>
           </div>

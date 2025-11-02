@@ -51,6 +51,8 @@ export const apiClient = {
   // Auth endpoints
   auth: {
     verifyToken: () => api.get("/api/auth"),
+    loginWithWhatsapp: (whatsapp) =>
+      api.post("/api/auth/otp/login-whatsapp", { whatsapp }),
   },
 
   // User endpoints
@@ -69,6 +71,7 @@ export const apiClient = {
   // Products endpoints
   products: {
     getAll: (params = {}) => api.get("/api/products", { params }),
+    getProducts: (params = {}) => api.get("/api/products", { params }), // Alias for getAll
     create: (productData) => api.post("/api/products/create", productData),
     getById: (id) => api.get(`/api/products/${id}`),
     update: (id, productData) => api.put(`/api/products/${id}`, productData),
@@ -78,15 +81,15 @@ export const apiClient = {
         params: { q: query, ...filters },
       }),
     getByUser(userId) {
-      return api.get(`/api/products/user/${userId}`);
+      return api.get(`/api/products/my-products`);
     },
     // Get user's own products
     getMyProducts: () => api.get("/api/products/my-products"),
     // Get auction products
     getAuctions: (status = null) => {
-      const params = { auction_live: "true" };
+      const params = { auction_live: true };
       if (status) params.status = status;
-      return api.get("/api/products", { params });
+      return api.get("/api/auctions", { params });
     },
     // Get marketplace products
     getMarketplace: () =>
@@ -103,4 +106,4 @@ export const apiClient = {
   },
 };
 
-export default api;
+export default apiClient;

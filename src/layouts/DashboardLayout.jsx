@@ -4,11 +4,13 @@ import { useNavigate } from "react-router-dom";
 
 import Logo from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
+import { useNavigationContext } from "../context/NavigationContext";
 import ProductListingModal from "../features/dashboard/components/ProductListingModal";
 
 const DashboardLayout = ({ children }) => {
   const { logout, userProfile } = useAuth();
   const navigate = useNavigate();
+  const { interceptNavigation } = useNavigationContext();
   const [isProductModalOpen, setProductModalOpen] = React.useState(false);
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
@@ -33,6 +35,15 @@ const DashboardLayout = ({ children }) => {
       path: "/dashboard/my-products",
     },
   ];
+
+  const handleNavigation = (path) => {
+    // Check if navigation is intercepted (for auction room exit modal)
+    const canNavigate = interceptNavigation(path);
+    if (canNavigate) {
+      navigate(path);
+    }
+    // If canNavigate is false, the interceptor will handle showing the modal
+  };
 
   const handleLogout = async () => {
     try {
@@ -137,7 +148,7 @@ const DashboardLayout = ({ children }) => {
                   <li key={item.id}>
                     <button
                       onClick={() => {
-                        navigate(item.path);
+                        handleNavigation(item.path);
                         setSidebarOpen(false); // close on mobile nav
                       }}
                       className={`w-full flex items-center px-4 py-3 rounded-xl transition-colors ${
@@ -160,7 +171,7 @@ const DashboardLayout = ({ children }) => {
             {userProfile && (
               <button
                 onClick={() => {
-                  navigate("/profile");
+                  handleNavigation("/dashboard/profile");
                   setSidebarOpen(false);
                 }}
                 className="w-full mb-4 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"

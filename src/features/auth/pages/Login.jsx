@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-
+import { apiClient } from "../../../api/client";
 import Button from "../../../components/Button";
 import Logo from "../../../components/Logo";
 import { auth, googleProvider } from "../../../firebaseConfig";
@@ -18,46 +18,42 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
-  console.log(API_BASE_URL);
   // Send OTP using backend
   const handleSendOtp = async () => {
     setIsLoading(true);
     setError("");
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/otp/request-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mobile }),
-      });
-      const result = await response.json();
-      if (result.success) {
-        setOtpSent(true);
-        setIsLoading(false);
-        setError("");
-        toast.success("OTP sent to your mobile number!");
-      } else {
-        setIsLoading(false);
-        setError(result.error || "Failed to send OTP. Please try again.");
-      }
-    } catch (err) {
-      setIsLoading(false);
-      setError("Network error. Please try again.");
-    }
+    // try {
+    //   const response = await fetch(`${API_BASE_URL}/api/auth/otp/request-otp`, {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({ mobile }),
+    //   });
+    //   const result = await response.json();
+    //   if (result.success) {
+    setOtpSent(true);
+    setIsLoading(false);
+    setError("");
+    toast.success("OTP sent to your mobile number!");
+    // } else {
+    //   setIsLoading(false);
+    //   setError(result.error || "Failed to send OTP. Please try again.");
+    // }
+    // } catch (err) {
+    //   setIsLoading(false);
+    //   setError("Network error. Please try again.");
+    // }
   };
 
   const handleVerifyOtp = async () => {
     setIsLoading(true);
     setError("");
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/otp/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mobile, otp }),
-      });
-      const result = await response.json();
+      const response = await apiClient.auth.loginWithWhatsapp(mobile);
+      const result = await response;
       console.log(result);
-      if (result.success && result.token) {
+      if (result.token) {
         // Sign in to Firebase with custom token
+        console.log("Logging in with token:", result.token);
         const auth = getAuth();
         console.log(getAuth());
         await signInWithCustomToken(auth, result.token);
@@ -66,12 +62,16 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
         toast.success("Successfully logged in!");
         onSuccess?.({ mobile });
       } else {
+        console.log("Invalid OTP result:", result);
         setIsLoading(false);
-        setError(result.error || "Invalid OTP. Please try again.");
+        setError(
+          result.error || "Invalid whatsapp number or OTP. Please try again."
+        );
       }
     } catch (err) {
+      console.log("Error verifying OTP:", err);
       setIsLoading(false);
-      setError("Network error. Please try again.");
+      setError(err.error || "Network error. Please try again.");
     }
   };
 
@@ -140,7 +140,6 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
             placeholder="e.g. +923001234567"
             value={mobile}
             onChange={(e) => setMobile(e.target.value)}
-            disabled={otpSent}
             required
           />
           {error && <div className="text-red-600 text-sm">{error}</div>}

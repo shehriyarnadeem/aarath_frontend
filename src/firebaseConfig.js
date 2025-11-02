@@ -4,6 +4,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getDatabase } from "firebase/database";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -14,6 +15,8 @@ const firebaseConfig = {
   messagingSenderId: "750871633058",
   appId: "1:750871633058:web:59371c533c7a2348954bfb",
   measurementId: "G-VEFWY4H3BV",
+  // Realtime Database URL - This is required for Realtime Database
+  databaseURL: "https://aarath-72ec4-default-rtdb.firebaseio.com/",
 };
 
 // Initialize Firebase
@@ -24,6 +27,7 @@ const analytics = getAnalytics(app);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const realtimeDb = getDatabase(app);
 
 // Auth providers
 export const googleProvider = new GoogleAuthProvider();

@@ -29,20 +29,34 @@ export const AuthProvider = ({ children }) => {
         try {
           // Fetch user profile from backend
           const profile = await apiClient.users.getById(firebaseUser.uid);
-          console.log(profile);
+          console.log("Fetched user profile:", profile);
           setUserProfile(profile);
         } catch (error) {
           console.error("Error fetching user profile:", error);
-          // If user doesn't exist in backend, create them
+          // If user doesn't exist in backend, create them or use fallback profile
           try {
             const newProfile = await apiClient.users.create({
               id: firebaseUser.uid,
               email: firebaseUser.email,
-              name: firebaseUser.displayName,
+              name:
+                firebaseUser.displayName || firebaseUser.email?.split("@")[0],
             });
+            console.log("Created new user profile:", newProfile);
             setUserProfile(newProfile);
           } catch (createError) {
             console.error("Error creating user profile:", createError);
+            // Fallback: create a minimal profile from Firebase user
+            const fallbackProfile = {
+              id: firebaseUser.uid,
+              email: firebaseUser.email,
+              name:
+                firebaseUser.displayName ||
+                firebaseUser.email?.split("@")[0] ||
+                "User",
+              businessName: firebaseUser.displayName || "My Business",
+            };
+            console.log("Using fallback profile:", fallbackProfile);
+            setUserProfile(fallbackProfile);
           }
         }
       } else {
@@ -59,12 +73,31 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      // Sign out from Firebase
       await signOut(auth);
+
+      // Clear local state immediately
       setUser(null);
       setUserProfile(null);
       setIsAuthenticated(false);
+      updateUserProfile(null);
+
+      // Clear any local storage if needed
+      localStorage.removeItem("userProfile");
+      localStorage.removeItem("authToken");
+
+      // User successfully signed out
     } catch (error) {
       console.error("Error signing out:", error);
+
+      // Even if Firebase signout fails, clear local state
+      setUser(null);
+      setUserProfile(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem("userProfile");
+      localStorage.removeItem("authToken");
+
+      throw error; // Re-throw so AppLayout can handle it
     }
   };
 

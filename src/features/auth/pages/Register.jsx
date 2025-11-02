@@ -73,7 +73,7 @@ const Register = ({ onSuccess, onSwitchToLogin }) => {
           >
             Sign up with WhatsApp / Mobile
           </Button>
-          <Button
+          {/* <Button
             type="button"
             variant="outline"
             size="lg"
@@ -87,7 +87,7 @@ const Register = ({ onSuccess, onSwitchToLogin }) => {
               className="w-5 h-5 mr-3"
             />
             Continue with Google
-          </Button>
+          </Button> */}
         </div>
       )}
 
