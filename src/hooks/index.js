@@ -9,6 +9,9 @@ export {
   useAuctionStats,
 } from "./useRealtimeAuction";
 
+// Export auction activity hook
+export { useGlobalAuctionActivity } from "./useAuctionActivity";
+
 // Custom hook for managing local storage
 export const useLocalStorage = (key, initialValue) => {
   const [storedValue, setStoredValue] = useState(() => {

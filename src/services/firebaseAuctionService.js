@@ -170,7 +170,7 @@ export class FirebaseAuctionService {
 
       // Add join activity
       await this.addActivity(auctionId, {
-        type: "join",
+        type: "Place Bid",
         userId,
         userName,
         message: `${userName} joined the auction`,
