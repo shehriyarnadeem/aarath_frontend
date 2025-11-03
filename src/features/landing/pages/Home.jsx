@@ -11,9 +11,9 @@ import Testimonials from "../components/Testimonials";
 
 const Home = ({ onGetStarted, onContinueAsGuest }) => {
   return (
-    <div className="bg-gradient-to-b from-green-50 to-white w-full">
+    <div className="bg-gradient-to-b from-green-100 to-white w-full min-h-screen flex flex-col">
       {/* Hero Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-20 w-full">
+      <section className="px-4 sm:px-6 lg:px-8 py-20 w-full flex-1 flex items-center justify-center">
         <div className="text-center w-full">
           <motion.h1
             className="text-4xl md:text-6xl font-bold text-gray-900 mb-6"
@@ -64,7 +64,7 @@ const Home = ({ onGetStarted, onContinueAsGuest }) => {
       </section>
 
       {/* Stats Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-16 bg-white w-full">
+      {/* <section className="px-4 sm:px-6 lg:px-8 py-20 bg-white w-full">
         <div className="w-full">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <motion.div
@@ -98,7 +98,7 @@ const Home = ({ onGetStarted, onContinueAsGuest }) => {
             </motion.div>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };

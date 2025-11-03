@@ -83,14 +83,6 @@ const Marketplace = () => {
 
   // Comprehensive fetchProducts function
   const fetchProducts = useCallback(async () => {
-    console.log("fetchProducts called with:", {
-      currentPage,
-      itemsPerPage,
-      debouncedSearch,
-      selectedCategory,
-      sortBy,
-    });
-
     try {
       setLoading(true);
       setError(null);
@@ -158,13 +150,13 @@ const Marketplace = () => {
   // Initial fetch on mount (simpler approach)
   useEffect(() => {
     const initialFetch = async () => {
-      console.log("Initial fetch starting...");
       try {
         setLoading(true);
         setError(null);
         const response = await apiClient.products.getAll({
           page: 1,
           limit: 12,
+          environment: "MARKETPLACE",
         });
         console.log("Initial response:", response);
 
