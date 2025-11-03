@@ -50,12 +50,9 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
     try {
       const response = await apiClient.auth.loginWithWhatsapp(mobile);
       const result = await response;
-      console.log(result);
       if (result.token) {
         // Sign in to Firebase with custom token
-        console.log("Logging in with token:", result.token);
         const auth = getAuth();
-        console.log(getAuth());
         await signInWithCustomToken(auth, result.token);
         setIsLoading(false);
         setError("");

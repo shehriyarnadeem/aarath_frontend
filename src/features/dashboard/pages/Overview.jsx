@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { TrendingUp, Users, Package, DollarSign } from "lucide-react";
 import React, { useState, useEffect, useCallback } from "react";
 import Button from "../../../components/Button";
-import AuthPrompt from "../../../components/AuthPrompt";
 import { useAuth } from "../../../context/AuthContext";
 import apiClient from "../../../api/client";
 import {
@@ -49,13 +48,11 @@ const Overview = () => {
     },
   ];
 
-  // Static list of all available categories
   const allCategories = React.useMemo(
     () => ["wheat", "rice", "paddy", "maize", "sesame", "pulses"],
     []
   );
 
-  // Time range options
   const timeRanges = [
     { value: 1, label: "Last 1 Month" },
     { value: 3, label: "Last 3 Months" },
@@ -63,16 +60,13 @@ const Overview = () => {
     { value: 12, label: "Last 1 Year" },
   ];
 
-  // State for real price trend data
   const [priceTrendData, setPriceTrendData] = useState({});
   const [availableCategories, setAvailableCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("wheat");
-  const [selectedTimeRange, setSelectedTimeRange] = useState(12); // Default to 1 year
+  const [selectedTimeRange, setSelectedTimeRange] = useState(12);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Function to fetch products and calculate price trends
-  // Helper: Group products by category
   const groupByCategory = (products) =>
     products.reduce((acc, product) => {
       const category = product.category;
@@ -81,7 +75,6 @@ const Overview = () => {
       return acc;
     }, {});
 
-  // Helper: Filter products by time range
   const filterByTimeRange = (products, months) => {
     const cutoffDate = new Date();
     cutoffDate.setMonth(cutoffDate.getMonth() - months);
@@ -90,7 +83,6 @@ const Overview = () => {
     );
   };
 
-  // Helper: Group products by month and calculate average price
   const getMonthlyTrends = (products) => {
     const productsByMonth = products.reduce((acc, product) => {
       const createdDate = new Date(product.createdAt);
@@ -159,162 +151,168 @@ const Overview = () => {
     }
   }, [selectedTimeRange, selectedCategory, allCategories]);
 
-  // Fetch data on component mount
   useEffect(() => {
     fetchPriceTrends();
   }, [fetchPriceTrends]);
 
-  // Handle category change
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
   };
+
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent mb-2">
-          Market Price Trends
-        </h1>
-        <p className="text-gray-400 text-lg">
-          Real-time agricultural commodity price insights and market analytics
-        </p>
-      </div>
-      {/* Seasonal Price Trends Widget */}
-      <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-primary-700">
-            Seasonal Price Trends
-          </h3>
-          <div className="flex items-center gap-4">
-            <select
-              className="input-field w-40"
-              value={selectedCategory}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              disabled={loading}
-            >
-              {allCategories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                </option>
-              ))}
-            </select>
-            <select
-              className="input-field w-44"
-              value={selectedTimeRange}
-              onChange={(e) => setSelectedTimeRange(parseInt(e.target.value))}
-              disabled={loading}
-            >
-              {timeRanges.map((range) => (
-                <option key={range.value} value={range.value}>
-                  {range.label}
-                </option>
-              ))}
-            </select>
-            <Button
-              onClick={fetchPriceTrends}
-              variant="outline"
-              size="sm"
-              disabled={loading}
-            >
-              {loading ? "Loading..." : "Refresh"}
-            </Button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">
+            <h1 className=" text-white text-4xl md:text-5xl font-bold mb-4">
+              Market Price Analytics
+            </h1>
+            <p className="text-xl text-green-100 mb-8 max-w-3xl mx-auto">
+              Get real-time insights on agricultural commodity prices, market
+              trends, and seasonal variations to make informed trading decisions
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 text-sm">
+              <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                ✨ Real-time Data
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                📊 Advanced Analytics
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                🌾 Agricultural Focus
+              </div>
+            </div>
           </div>
         </div>
-
-        {loading && (
-          <div className="flex justify-center items-center h-[300px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-            <span className="ml-2 text-gray-600">Loading price trends...</span>
-          </div>
-        )}
-
-        {error && (
-          <div className="flex justify-center items-center h-[300px] text-red-600">
-            <p>{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && priceTrendData[selectedCategory] && (
-          <div className="mb-4">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={priceTrendData[selectedCategory]}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis
-                  tickFormatter={(value) => `₹${value.toLocaleString()}`}
-                />
-                <Tooltip
-                  formatter={(value) => [
-                    `₹${value.toLocaleString()}`,
-                    "Average Price",
-                  ]}
-                  labelFormatter={(label, payload) => {
-                    if (payload && payload[0]) {
-                      return `${label} (${payload[0].payload.count} products)`;
-                    }
-                    return `Month: ${label}`;
-                  }}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="price"
-                  stroke="#16a34a"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                  name={`${selectedCategory} Average Price`}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {!loading && !error && !priceTrendData[selectedCategory] && (
-          <div className="flex justify-center items-center h-[300px] text-gray-500">
-            <p>
-              No {selectedCategory} products found. Add some {selectedCategory}{" "}
-              products to see price trends.
-            </p>
-          </div>
-        )}
-
-        {!loading && !error && Object.keys(priceTrendData).length === 0 && (
-          <div className="flex justify-center items-center h-[300px] text-gray-500">
-            <p>No price data available. Add some products to see trends.</p>
-          </div>
-        )}
       </div>
-      {/* Stats Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div
-              key={index}
-              className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
-                  <Icon className="w-6 h-6 text-primary-600" />
-                </div>
-                <span
-                  className={`text-sm font-medium ${
-                    stat.positive ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {stat.change}
-                </span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                {stat.value}
+
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Seasonal Price Trends
               </h3>
-              <p className="text-gray-600 text-sm">{stat.title}</p>
-            </motion.div>
-          );
-        })}
+              <p className="text-gray-600 text-sm">
+                Track commodity price movements over time
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <select
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                value={selectedCategory}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                disabled={loading}
+              >
+                {allCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                value={selectedTimeRange}
+                onChange={(e) => setSelectedTimeRange(parseInt(e.target.value))}
+                disabled={loading}
+              >
+                {timeRanges.map((range) => (
+                  <option key={range.value} value={range.value}>
+                    {range.label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                onClick={fetchPriceTrends}
+                variant="outline"
+                size="sm"
+                disabled={loading}
+                className="border-green-600 text-green-600 hover:bg-green-50"
+              >
+                {loading ? "Loading..." : "Refresh"}
+              </Button>
+            </div>
+          </div>
+
+          {loading && (
+            <div className="flex justify-center items-center h-[300px]">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              <span className="ml-2 text-gray-600">
+                Loading price trends...
+              </span>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex justify-center items-center h-[300px] text-red-600">
+              <p>{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && priceTrendData[selectedCategory] && (
+            <div className="mb-4">
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart data={priceTrendData[selectedCategory]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" stroke="#666" fontSize={12} />
+                  <YAxis
+                    tickFormatter={(value) => `₹${value.toLocaleString()}`}
+                    stroke="#666"
+                    fontSize={12}
+                  />
+                  <Tooltip
+                    formatter={(value) => [
+                      `₹${value.toLocaleString()}`,
+                      "Average Price",
+                    ]}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload[0]) {
+                        return `${label} (${payload[0].payload.count} products)`;
+                      }
+                      return `Month: ${label}`;
+                    }}
+                    contentStyle={{
+                      backgroundColor: "#fff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="price"
+                    stroke="#16a34a"
+                    strokeWidth={3}
+                    dot={{ r: 5, fill: "#16a34a" }}
+                    activeDot={{ r: 7, fill: "#16a34a" }}
+                    name={`${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Average Price`}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {!loading && !error && !priceTrendData[selectedCategory] && (
+            <div className="flex flex-col justify-center items-center h-[300px] text-gray-500">
+              <Package className="w-12 h-12 text-gray-300 mb-4" />
+              <p className="text-center">
+                No {selectedCategory} products found. <br />
+                Add some {selectedCategory} products to see price trends.
+              </p>
+            </div>
+          )}
+
+          {!loading && !error && Object.keys(priceTrendData).length === 0 && (
+            <div className="flex flex-col justify-center items-center h-[300px] text-gray-500">
+              <TrendingUp className="w-12 h-12 text-gray-300 mb-4" />
+              <p className="text-center">
+                No price data available. <br />
+                Add some products to see trends.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

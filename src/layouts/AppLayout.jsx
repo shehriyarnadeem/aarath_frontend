@@ -28,8 +28,6 @@ const AppLayout = ({ children }) => {
   const location = useLocation();
   const { interceptNavigation } = useNavigationContext();
 
-  // Debug: Check if logout function is available
-  console.log("AppLayout Debug - logout function available:", typeof logout);
   const [isProductModalOpen, setProductModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -80,9 +78,7 @@ const AppLayout = ({ children }) => {
   const handleLogout = async () => {
     try {
       setUserDropdownOpen(false); // Close dropdown first
-      console.log("Logout function triggered, user:", userProfile);
       await logout();
-      console.log("Logout completed, redirecting...");
       // Use window.location to ensure complete state reset
       window.location.href = "/marketplace";
     } catch (error) {
@@ -355,9 +351,6 @@ const AppLayout = ({ children }) => {
                 {/* Logout Button for Mobile */}
                 <button
                   onClick={() => {
-                    console.log(
-                      "MOBILE LOGOUT BUTTON CLICKED - IMMEDIATE TEST"
-                    );
                     handleLogout();
                   }}
                   className="w-full flex items-center px-3 py-3 rounded-lg text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors border-t border-gray-200 mt-2 pt-4"

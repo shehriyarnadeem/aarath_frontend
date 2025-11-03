@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import Button from "../../../components/Button";
 import { Search, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import apiClient from "../../../api/client";
+import { environments } from "eslint-plugin-prettier";
 
 const categories = [
   {
@@ -98,6 +99,7 @@ const Marketplace = () => {
       const params = {
         page: currentPage,
         limit: itemsPerPage,
+        environment: "MARKETPLACE",
       };
 
       // Add keyword search
@@ -233,7 +235,7 @@ const Marketplace = () => {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               {/* Left Content */}
               <div className="text-white">
-                <h1 className="text-4xl sm:text-6xl font-bold mb-6 leading-tight">
+                <h1 className=" text-white text-4xl sm:text-6xl font-bold mb-6 leading-tight">
                   Pakistan's First
                   <span className="block text-yellow-300">
                     Agricultural Marketplace
