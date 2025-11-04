@@ -4,7 +4,11 @@ import { Users, Gavel } from "lucide-react";
 import Button from "../../../components/Button";
 import { apiClient } from "../../../api/client";
 import { useAuth } from "../../../context/AuthContext";
-import { useBidding } from "../../../hooks";
+import {
+  useBidding,
+  useRealtimeAuction,
+  useOnlineParticipants,
+} from "../../../hooks";
 import {
   LiveActivityFeed,
   RealtimeAuctionCard,
@@ -15,7 +19,6 @@ import {
   sortOptions,
   filterAndSortAuctions,
 } from "../../../utils/auctionUtils";
-
 const AuctionRoom = () => {
   const { isAuthenticated } = useAuth();
 
@@ -36,6 +39,10 @@ const AuctionRoom = () => {
 
   // Firebase hooks for selected auction
   const { placeBid } = useBidding(selectedAuction?.id);
+  const realtimeAuction = useRealtimeAuction(
+    selectedAuction?.id,
+    rawAuctionData
+  );
 
   // Data fetching
   useEffect(() => {
@@ -50,6 +57,7 @@ const AuctionRoom = () => {
           const transformedProducts = response.data.auctions.map(
             transformProductToAuctionFormat
           );
+
           setAuctionProducts(transformedProducts);
         } else {
           setRawAuctionData([]);
@@ -81,8 +89,27 @@ const AuctionRoom = () => {
       alert("Please login to place bids");
       return;
     }
-    setSelectedAuction(auction);
-    setBidAmount(auction.minimumBid.toString());
+
+    // Ensure we have valid values
+    const currentBid =
+      realtimeAuction.metadata?.currentHighestBid || auction.currentBid;
+    const originalMinimumBid = auction.minimumBid || 0;
+
+    // Calculate minimum bid as 1% higher than current bid
+    const minimumBid =
+      currentBid > 0
+        ? Math.ceil(currentBid * 1.01)
+        : Math.max(originalMinimumBid, 1);
+
+    // Update auction object with calculated minimum bid
+    const updatedAuction = {
+      ...auction,
+      currentBid: currentBid,
+      minimumBid: minimumBid,
+    };
+
+    setSelectedAuction(updatedAuction);
+    setBidAmount(minimumBid.toString());
     setShowBidModal(true);
   };
 
@@ -105,8 +132,10 @@ const AuctionRoom = () => {
     if (!bidAmount || !selectedAuction) return;
 
     const bidValue = parseFloat(bidAmount);
-    if (bidValue < selectedAuction.minimumBid) {
-      alert(`Minimum bid is ₨${selectedAuction.minimumBid.toLocaleString()}`);
+    const minimumRequired = selectedAuction?.minimumBid || 1;
+
+    if (isNaN(bidValue) || bidValue < minimumRequired) {
+      alert(`Minimum bid is ₨${minimumRequired.toLocaleString()}`);
       return;
     }
 
@@ -325,7 +354,7 @@ const AuctionRoom = () => {
                       <button
                         key={category.id}
                         onClick={() => setSelectedCategory(category.id)}
-                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                        className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base ${
                           selectedCategory === category.id
                             ? "bg-green-100 text-green-800 border-l-4 border-green-600"
                             : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
@@ -472,7 +501,7 @@ const AuctionRoom = () => {
 
       {/* Bid Modal */}
       <AnimatePresence>
-        {showBidModal && selectedAuction && (
+        {showBidModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -491,33 +520,49 @@ const AuctionRoom = () => {
                 Place Your Bid
               </h3>
 
-              <div className="mb-4">
-                <h4 className="font-medium text-gray-900 mb-2">
-                  {selectedAuction.title}
-                </h4>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <div>
-                    Current Bid: ₨{selectedAuction.currentBid.toLocaleString()}
-                  </div>
-                  <div>
-                    Minimum Bid: ₨{selectedAuction.minimumBid.toLocaleString()}
+              {selectedAuction ? (
+                <div className="mb-4">
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    {selectedAuction.title}
+                  </h4>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div>
+                      Current Bid: ₨
+                      {selectedAuction.currentBid.toLocaleString()}
+                    </div>
+                    <div>
+                      Minimum Bid: ₨
+                      {selectedAuction.minimumBid.toLocaleString()}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="mb-4 text-red-600">
+                  Error: No auction selected
+                </div>
+              )}
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Bid Amount (₨)
-                </label>
-                <input
-                  type="number"
-                  value={bidAmount}
-                  onChange={(e) => setBidAmount(e.target.value)}
-                  min={selectedAuction.minimumBid}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder={selectedAuction.minimumBid.toString()}
-                />
-              </div>
+              {selectedAuction && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Your Bid Amount (₨)
+                  </label>
+                  <input
+                    type="number"
+                    value={bidAmount}
+                    onChange={(e) => setBidAmount(e.target.value)}
+                    min={selectedAuction.minimumBid}
+                    step="1"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder={`Minimum: ${selectedAuction.minimumBid.toLocaleString()}`}
+                  />
+                  <div className="mt-2 text-xs text-gray-500">
+                    Must be at least ₨
+                    {selectedAuction.minimumBid.toLocaleString()} (1% higher
+                    than current bid)
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <Button
