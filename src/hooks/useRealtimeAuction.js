@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useContext } from "react";
+import { useState, useEffect, useCallback, useContext, use } from "react";
 import { FirebaseAuctionService } from "../services/firebaseAuctionService";
 import AuthContext from "../context/AuthContext";
+import { set } from "firebase/database";
 
 /**
  * Hook to manage real-time auction data
@@ -9,62 +10,62 @@ import AuthContext from "../context/AuthContext";
  */
 export const useRealtimeAuction = (auctionId, auctionData) => {
   const { userProfile } = useContext(AuthContext);
-  const [auctionState, setAuctionState] = useState({
-    metadata: null,
-    bids: [],
-    participants: [],
-    activity: [],
-    isConnected: false,
-    isLoading: true,
-    error: null,
-  });
+  const [auctionState, setAuctionState] = useState({});
+  const [hasJoined, setHasJoined] = useState(false); // ✅ Add join state tracking
+
+  const [auctionMetadata, setAuctionMetadata] = useState(null);
+  const [participants, setParticipants] = useState([]);
+
+  // ✅ Reset hasJoined when auction ID changes
+  useEffect(() => {
+    setHasJoined(false);
+  }, [auctionId]);
 
   // Initialize auction room in Firebase
   const initializeRoom = useCallback(async () => {
-    if (!auctionId || !auctionData) {
-      console.log("❌ Missing auction data:", {
-        auctionId,
-        hasAuctionData: !!auctionData,
-      });
+    if (!auctionId || !userProfile?.id || hasJoined) {
       return;
     }
-
     try {
-      console.log("🚀 Initializing auction room:", auctionId, auctionData);
-      await FirebaseAuctionService.initializeAuctionRoom(auctionData);
-
-      // Join the auction room
-      if (userProfile) {
-        await FirebaseAuctionService.joinAuctionRoom(auctionId, userProfile);
+      // 🔑 Join the auction room and add activity
+      await FirebaseAuctionService.initializeAuctionRoom(
+        auctionId,
+        auctionData
+      );
+      if (userProfile && hasJoined === false) {
+        console.log("Initializing real-time auction hook for ID:", hasJoined);
+        await FirebaseAuctionService.joinAuctionRoom(
+          auctionData.id,
+          userProfile
+        );
+        setHasJoined(true);
       }
     } catch (error) {
-      console.error("Error initializing auction room:", error);
       setAuctionState((prev) => ({
         ...prev,
         error: error.message,
         isLoading: false,
       }));
+      // Don't set hasJoined to true on error, allow retry
     }
   }, [auctionId, auctionData, userProfile]);
-
   // Set up real-time subscriptions
   useEffect(() => {
-    if (!auctionId) return;
+    if (!auctionId || !userProfile?.id) return;
 
     const unsubscribeFunctions = [];
 
     const setupSubscriptions = async () => {
       try {
-        // Initialize room first
+        // Initialize room first (with deduplication)
         await initializeRoom();
 
         // Subscribe to auction metadata
         const unsubscribeAuction = FirebaseAuctionService.subscribeToAuction(
           auctionId,
           (data) => {
-            setAuctionState((prev) => ({
-              ...prev,
-              metadata: data.metadata,
+            setAuctionState((_prev) => ({
+              ...data,
               isConnected: true,
               isLoading: false,
               error: null,
@@ -87,15 +88,12 @@ export const useRealtimeAuction = (auctionId, auctionData) => {
 
         // Subscribe to participants
         const unsubscribeParticipants =
-          FirebaseAuctionService.subscribeToParticipants(
-            auctionId,
-            (participants) => {
-              setAuctionState((prev) => ({
-                ...prev,
-                participants,
-              }));
-            }
-          );
+          FirebaseAuctionService.subscribeToParticipants((participants) => {
+            setParticipants((prev) => ({
+              ...prev,
+              ...participants,
+            }));
+          });
         unsubscribeFunctions.push(unsubscribeParticipants);
 
         // Subscribe to activity feed
@@ -104,18 +102,19 @@ export const useRealtimeAuction = (auctionId, auctionData) => {
           (activity) => {
             setAuctionState((prev) => ({
               ...prev,
-              activity,
+              activity: [...activity],
             }));
           }
         );
         unsubscribeFunctions.push(unsubscribeActivity);
+
+        const unsubscribeAuctionMetadata =
+          FirebaseAuctionService.subscribeToAuctionMetadata((metadata) => {
+            setAuctionMetadata(metadata);
+          });
+        unsubscribeFunctions.push(unsubscribeAuctionMetadata);
       } catch (error) {
         console.error("Error setting up subscriptions:", error);
-        setAuctionState((prev) => ({
-          ...prev,
-          error: error.message,
-          isLoading: false,
-        }));
       }
     };
 
@@ -124,11 +123,10 @@ export const useRealtimeAuction = (auctionId, auctionData) => {
     // Cleanup function
     return () => {
       unsubscribeFunctions.forEach((unsubscribe) => unsubscribe());
-      FirebaseAuctionService.cleanup(auctionId);
     };
-  }, [auctionId]);
+  }, [auctionId, userProfile?.id, initializeRoom]);
 
-  return auctionState;
+  return { auctionState, participants };
 };
 
 /**
@@ -148,7 +146,7 @@ export const useBidding = (auctionId) => {
       if (!auctionId || !userProfile || !bidAmount) {
         throw new Error("Missing required parameters for bid placement");
       }
-      console.log(`💰 Placing bid of $${bidAmount} in auction ${auctionId}`);
+      // Placing bid in auction
       setBidState((prev) => ({ ...prev, isPlacing: true, error: null }));
 
       try {
@@ -175,7 +173,7 @@ export const useBidding = (auctionId) => {
         throw error;
       }
     },
-    [auctionId, userProfile]
+    [auctionId]
   );
 
   const getTotalBids = useCallback(async () => {
@@ -226,7 +224,6 @@ export const useAuctionTimer = (auctionId, auctionMetadata) => {
       });
       return;
     }
-    console.log(auctionMetadata, "--endtime");
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
       const end = new Date(auctionMetadata?.endTime).getTime();

@@ -54,11 +54,10 @@ export class FirebaseAuctionService {
    * Initialize an auction room in Firebase
    * @param {Object} auctionData - Auction data from your API
    */
-  static async initializeAuctionRoom(auctionData) {
+  static async initializeAuctionRoom(auctionId, auctionData) {
     try {
-      console.log("🔍 Initializing auction room with data:", auctionData);
-
-      const auctionRef = ref(realtimeDb, `auctions/${auctionData.id}`);
+      const auctionRef = ref(realtimeDb, `aarath/auctions/${auctionId}`);
+      const participantRef = ref(realtimeDb, `aarath/participants`);
 
       // Check if auction room already exists
       const existingData = await new Promise((resolve) => {
@@ -73,7 +72,7 @@ export class FirebaseAuctionService {
 
       if (existingData) {
         console.log(
-          `♻️ Auction room ${auctionData.id} already exists, skipping initialization`
+          `♻️ Auction room ${auctionId} already exists, skipping initialization`
         );
         return true;
       }
@@ -93,38 +92,59 @@ export class FirebaseAuctionService {
         throw new Error("Auction ID is required");
       }
 
-      // ✅ Only create new auction room if it doesn't exist
-      console.log(`🆕 Creating new auction room for ${auctionData.id}`);
       const auctionRoomData = {
-        metadata: {
-          auctionId: auctionData.id,
-          productId: productId,
-          title: title,
-          status: auctionData.auctionStatus || auctionData.status || "active",
-          startTime: auctionData.startTime || auctionData.createdAt,
-          endTime: auctionData.auctionEndTime || auctionData.endTime,
-          currentHighestBid:
-            auctionData.currentBid ||
-            auctionData.currentHighestBid ||
-            auctionData.startingBid ||
-            0,
-          startingBid: auctionData.startingBid || 0,
-          totalBids: auctionData.totalBids || 0,
-          totalParticipants: 0,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        },
+        auctionId: auctionData.id,
+        productId: productId,
+        title: title,
+        status: auctionData.auctionStatus || auctionData.status || "active",
+        startTime: auctionData.startTime || auctionData.createdAt,
+        endTime: auctionData.auctionEndTime || auctionData.endTime,
+        currentHighestBid:
+          auctionData.currentBid ||
+          auctionData.currentHighestBid ||
+          auctionData.startingBid ||
+          0,
+        seller: auctionData?.seller,
+        startingBid: auctionData.startingBid,
+        serialNumber: auctionData?.serialNumber,
+        totalBids: auctionData.totalBids || 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
         bids: {},
-        participants: {},
         activity: {},
       };
-
+      const participantData = { participants: {} };
       await set(auctionRef, auctionRoomData);
+      await set(participantRef, participantData);
 
       console.log(`✅ Auction room ${auctionData.id} initialized in Firebase`);
       return true;
     } catch (error) {
       console.error("❌ Error initializing auction room:", error);
+      throw error;
+    }
+  }
+
+  static async updateAuctionParticipant(auctionId, userId, userName) {
+    try {
+      const participantRef = ref(realtimeDb, `aarath/participants/${userId}`);
+      const participantData = {
+        userId,
+        userName,
+        joinedAt: serverTimestamp(),
+        lastSeen: serverTimestamp(),
+        isOnline: true,
+        totalBids: 0,
+      };
+
+      await set(participantRef, participantData);
+
+      // Update total participants count (for both new and returning participants)
+      await this.updateParticipantCount();
+
+      return true;
+    } catch (error) {
+      console.error("❌ Error joining auction room:", error);
       throw error;
     }
   }
@@ -140,53 +160,81 @@ export class FirebaseAuctionService {
         throw new Error("User must be authenticated to join auction");
       }
 
+      console.log("Joining auction room with user data:");
       const userId = auth.currentUser.uid;
       const userName =
         userData.businessName ||
         userData.personalName ||
-        userData.companyName("Anonymous");
+        userData.companyName ||
+        "Anonymous";
 
-      const participantRef = ref(
-        realtimeDb,
-        `auctions/${auctionId}/participants/${userId}`
-      );
-      const participantData = {
-        userId,
-        userName,
-        joinedAt: serverTimestamp(),
-        lastSeen: serverTimestamp(),
-        isOnline: true,
-        totalBids: 0,
-      };
-
-      await set(participantRef, participantData);
-
-      // Set up presence system - mark user offline when they disconnect
-      const presenceRef = ref(
-        realtimeDb,
-        `auctions/${auctionId}/participants/${userId}/isOnline`
-      );
-      onDisconnect(presenceRef).set(false);
-
-      // Add join activity
-      await this.addActivity(auctionId, {
-        type: "Place Bid",
-        userId,
-        userName,
-        message: `${userName} joined the auction`,
+      const participantRef = ref(realtimeDb, `aarath/participants/${userId}`);
+      const existingParticipant = await new Promise((resolve) => {
+        onValue(
+          participantRef,
+          (snapshot) => {
+            resolve(snapshot.val());
+          },
+          { onlyOnce: true }
+        );
       });
 
-      // Update total participants count
-      await this.updateParticipantCount(auctionId);
+      // ✅ Only set up disconnect handlers for NEW or OFFLINE users
+      if (existingParticipant && existingParticipant.isOnline) {
+        // Set up presence system - mark offline when disconnected
+        const presenceRef = ref(
+          realtimeDb,
+          `aarath/participants/${userId}/isOnline`
+        );
+        onDisconnect(presenceRef).set(false);
 
-      console.log(`✅ User ${userName} joined auction ${auctionId}`);
+        // Set up participant count decrement
+        const metadataRef = ref(
+          realtimeDb,
+          `aarath/auctionMetadata/totalParticipants`
+        );
+
+        // Get current count and set up decrement
+        const currentCount = await new Promise((resolve) => {
+          onValue(
+            metadataRef,
+            (snapshot) => {
+              resolve(snapshot.val() || 0);
+            },
+            { onlyOnce: true }
+          );
+        });
+
+        // Decrement count on disconnect (not set to 0!)
+        onDisconnect(metadataRef).set(Math.max(0, currentCount - 1));
+
+        console.log(`🔌 Disconnect handlers set up for ${userName}`);
+      }
+
+      // Update participant data
+      await this.updateAuctionParticipant(auctionId, userId, userName);
+
+      // Add join activity only for new/returning users
+      console.log("Existing participant data:", existingParticipant);
+      if (existingParticipant && !existingParticipant.isOnline) {
+        await this.addActivity(
+          auctionId,
+          {
+            type: "join",
+            userId,
+            userName,
+            message: `${userName} joined the auction`,
+          },
+          "global"
+        );
+      }
+
       return true;
     } catch (error) {
       console.error("❌ Error joining auction room:", error);
       throw error;
     }
   }
-
   /**
    * Leave an auction room
    * @param {string} auctionId
@@ -196,10 +244,7 @@ export class FirebaseAuctionService {
       if (!auth.currentUser) return;
 
       const userId = auth.currentUser.uid;
-      const participantRef = ref(
-        realtimeDb,
-        `auctions/${auctionId}/participants/${userId}`
-      );
+      const participantRef = ref(realtimeDb, `aarath/participants/${userId}`);
 
       // Mark as offline instead of removing (to preserve bid history)
       await update(participantRef, {
@@ -235,7 +280,7 @@ export class FirebaseAuctionService {
         `💰 Placing bid of $${bidAmount} by ${userName} in auction ${auctionId}`
       );
       // Create new bid
-      const bidsRef = ref(realtimeDb, `auctions/${auctionId}/bids`);
+      const bidsRef = ref(realtimeDb, `aarath/auctions/${auctionId}/bids`);
       const newBidRef = push(bidsRef);
 
       const bidData = {
@@ -249,7 +294,7 @@ export class FirebaseAuctionService {
       await set(newBidRef, bidData);
 
       // Update auction metadata
-      const metadataRef = ref(realtimeDb, `auctions/${auctionId}/metadata`);
+      const metadataRef = ref(realtimeDb, `aarath/auctions/${auctionId}`);
       await update(metadataRef, {
         currentHighestBid: bidAmount,
         totalBids: (await this.getTotalBids(auctionId)) + 1,
@@ -257,10 +302,7 @@ export class FirebaseAuctionService {
       });
 
       // Update participant's bid count
-      const participantRef = ref(
-        realtimeDb,
-        `auctions/${auctionId}/participants/${userId}`
-      );
+      const participantRef = ref(realtimeDb, `aarath/participants/${userId}`);
       await update(participantRef, {
         totalBids: (await this.getUserBidCount(auctionId, userId)) + 1,
         lastSeen: serverTimestamp(),
@@ -271,9 +313,23 @@ export class FirebaseAuctionService {
         type: "bid",
         userId,
         userName,
+        timestamp: serverTimestamp(),
         message: `${userName} placed a bid of $${bidAmount.toLocaleString()}`,
         data: { bidAmount },
       });
+
+      await this.addActivity(
+        auctionId,
+        {
+          type: "bid",
+          userId,
+          userName,
+          timestamp: serverTimestamp(),
+          message: `${userName} placed a bid of $${bidAmount.toLocaleString()}`,
+          data: { bidAmount },
+        },
+        "global"
+      );
 
       console.log(`✅ Bid placed: $${bidAmount} by ${userName}`);
       return newBidRef.key;
@@ -289,10 +345,20 @@ export class FirebaseAuctionService {
    * @param {Function} callback
    */
   static subscribeToAuction(auctionId, callback) {
-    const auctionRef = ref(realtimeDb, `auctions/${auctionId}`);
+    const auctionRef = ref(realtimeDb, `aarath/auctions/${auctionId}`);
 
     const unsubscribe = onValue(auctionRef, (snapshot) => {
       const data = snapshot.val();
+      if (data && data.bids) {
+        const bids = [];
+        Object.entries(data.bids).forEach(([key, value]) => {
+          bids.push({
+            id: key,
+            ...value,
+          });
+        });
+        data.bids = bids;
+      }
       if (data) {
         callback(data);
       }
@@ -302,13 +368,27 @@ export class FirebaseAuctionService {
     return () => off(auctionRef, "value", unsubscribe);
   }
 
+  static subscribeToAuctionMetadata(callback) {
+    const metadataRef = ref(realtimeDb, `aarath/auctionMetadata`);
+
+    const unsubscribe = onValue(metadataRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        callback(data);
+      }
+    });
+
+    // Return unsubscribe function
+    return () => off(metadataRef, "value", unsubscribe);
+  }
+
   /**
    * Subscribe to live bids
    * @param {string} auctionId
    * @param {Function} callback
    */
   static subscribeToBids(auctionId, callback) {
-    const bidsRef = ref(realtimeDb, `auctions/${auctionId}/bids`);
+    const bidsRef = ref(realtimeDb, `aarath/auctions/${auctionId}/bids`);
 
     const unsubscribe = onValue(bidsRef, (snapshot) => {
       const bids = [];
@@ -332,11 +412,8 @@ export class FirebaseAuctionService {
    * @param {string} auctionId
    * @param {Function} callback
    */
-  static subscribeToParticipants(auctionId, callback) {
-    const participantsRef = ref(
-      realtimeDb,
-      `auctions/${auctionId}/participants`
-    );
+  static subscribeToParticipants(callback) {
+    const participantsRef = ref(realtimeDb, `aarath/participants`);
 
     const unsubscribe = onValue(participantsRef, (snapshot) => {
       const participants = [];
@@ -346,7 +423,6 @@ export class FirebaseAuctionService {
           ...childSnapshot.val(),
         });
       });
-
       callback(participants);
     });
 
@@ -359,7 +435,10 @@ export class FirebaseAuctionService {
    * @param {Function} callback
    */
   static subscribeToActivity(auctionId, callback) {
-    const activityRef = ref(realtimeDb, `auctions/${auctionId}/activity`);
+    const activityRef = ref(
+      realtimeDb,
+      `aarath/auctions/${auctionId}/activity`
+    );
 
     const unsubscribe = onValue(activityRef, (snapshot) => {
       const activities = [];
@@ -378,14 +457,40 @@ export class FirebaseAuctionService {
     return () => off(activityRef, "value", unsubscribe);
   }
 
+  static subscribeToGlobalActivity(auctionId, userId, callback) {
+    const activityRef = ref(realtimeDb, `aarath/activities}`);
+
+    const unsubscribe = onValue(activityRef, (snapshot) => {
+      const activities = [];
+      snapshot.forEach((childSnapshot) => {
+        activities.push({
+          id: childSnapshot.key,
+          ...childSnapshot.val(),
+        });
+      });
+
+      // Sort by timestamp (newest first)
+      activities.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      callback(activities); // Limit to last 50 activities
+    });
+
+    return () => off(activityRef, "value", unsubscribe);
+  }
+
   /**
    * Add activity to the auction feed
    * @param {string} auctionId
    * @param {Object} activityData
+   * @param {string} activityScope
    */
-  static async addActivity(auctionId, activityData) {
+  static async addActivity(auctionId, activityData, activityScope = "auction") {
     try {
-      const activityRef = ref(realtimeDb, `auctions/${auctionId}/activity`);
+      const path =
+        activityScope === "auction"
+          ? `aarath/auctions/${auctionId}/activity`
+          : `aarath/activities`;
+
+      const activityRef = ref(realtimeDb, path);
       const newActivityRef = push(activityRef);
 
       await set(newActivityRef, {
@@ -401,21 +506,15 @@ export class FirebaseAuctionService {
    * Update participant count
    * @param {string} auctionId
    */
-  static async updateParticipantCount(auctionId) {
+  static async updateParticipantCount() {
     try {
-      const participantsRef = ref(
-        realtimeDb,
-        `auctions/${auctionId}/participants`
-      );
+      const participantsRef = ref(realtimeDb, `aarath/participants`);
       onValue(
         participantsRef,
         (snapshot) => {
           const count = snapshot.size;
-          const metadataRef = ref(
-            realtimeDb,
-            `auctions/${auctionId}/metadata/totalParticipants`
-          );
-          set(metadataRef, count);
+          const metadataRef = ref(realtimeDb, `aarath/auctionMetadata/`);
+          set(metadataRef, { totalParticipants: count });
         },
         { onlyOnce: true }
       );
@@ -430,7 +529,7 @@ export class FirebaseAuctionService {
    */
   static async getTotalBids(auctionId) {
     return new Promise((resolve) => {
-      const bidsRef = ref(realtimeDb, `auctions/${auctionId}/bids`);
+      const bidsRef = ref(realtimeDb, `aarath/auctions/${auctionId}/bids`);
       onValue(
         bidsRef,
         (snapshot) => {
@@ -448,7 +547,7 @@ export class FirebaseAuctionService {
    */
   static async getUserBidCount(auctionId, userId) {
     return new Promise((resolve) => {
-      const bidsRef = ref(realtimeDb, `auctions/${auctionId}/bids`);
+      const bidsRef = ref(realtimeDb, `aarath/auctions/${auctionId}/bids`);
       onValue(
         bidsRef,
         (snapshot) => {

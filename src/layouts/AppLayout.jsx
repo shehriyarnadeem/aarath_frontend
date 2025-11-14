@@ -99,10 +99,7 @@ const AppLayout = ({ children }) => {
   const AuthSection = () => {
     if (isAuthenticated) {
       // Handle case where userProfile might be null or still loading
-      const displayName =
-        userProfile?.businessName ||
-        userProfile?.email?.split("@")[0] ||
-        "User";
+      const displayName = userProfile?.businessName || "N/A";
       const avatar = displayName.charAt(0).toUpperCase();
 
       return (

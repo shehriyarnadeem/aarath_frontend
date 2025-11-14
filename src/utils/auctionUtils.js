@@ -32,8 +32,9 @@ export const generateDummyImages = (productCategory, productTitle) => {
  */
 export const transformProductToAuctionFormat = (auction) => {
   const product = auction.product;
-  const currentBid = auction.currentHighestBid || auction.startingBid || 0;
-  const minimumNextBid = currentBid * 1.01;
+  const currentHighestBid =
+    auction.currentHighestBid || auction.startingBid || 0;
+  const minimumNextBid = currentHighestBid * 1.01;
 
   const sellerName =
     product?.user?.businessName ||
@@ -83,11 +84,10 @@ export const transformProductToAuctionFormat = (auction) => {
       rating: 4.5 + Math.random() * 0.5, // Mock rating
       totalSales: Math.floor(Math.random() * 200) + 50, // Mock sales
     },
-    currentBid: currentBid,
-    startingPrice: auction.startingBid || 0,
+    currentHighestBid: currentHighestBid,
+    startingBid: auction.startingBid || 0,
     minimumBid: Math.ceil(minimumNextBid),
-    totalBids: auction.totalBids || Math.floor(Math.random() * 15) + 3,
-    watchers: auction.totalParticipants || Math.floor(Math.random() * 25) + 5,
+    totalBids: auction.totalBids || 0,
     endTime: new Date(auction.endTime),
     image: (() => {
       if (product?.images && product.images.length > 0) {

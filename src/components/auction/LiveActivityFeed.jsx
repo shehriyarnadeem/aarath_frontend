@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, UserPlus, Gavel } from "lucide-react";
+import { UserPlus, Gavel } from "lucide-react";
 import { useGlobalAuctionActivity } from "../../hooks/useAuctionActivity";
 
 /**
@@ -8,8 +8,8 @@ import { useGlobalAuctionActivity } from "../../hooks/useAuctionActivity";
  * @param {Array} auctionProducts - Array of formatted auction products for UI display
  * @param {Array} rawAuctionData - Array of raw auction data from API for Firebase subscriptions
  */
-const LiveActivityFeed = ({ auctionProducts, rawAuctionData }) => {
-  const globalActivity = useGlobalAuctionActivity(rawAuctionData);
+const LiveActivityFeed = ({ rawAuctionData }) => {
+  const globalActivity = useGlobalAuctionActivity();
   const [displayActivity, setDisplayActivity] = useState([]);
 
   // Format activity for display
@@ -18,7 +18,6 @@ const LiveActivityFeed = ({ auctionProducts, rawAuctionData }) => {
       setDisplayActivity([]);
       return;
     }
-
     // Format real Firebase activity - using actual bidder names and amounts
     const formatted = globalActivity
       .map((activity) => {
@@ -44,10 +43,10 @@ const LiveActivityFeed = ({ auctionProducts, rawAuctionData }) => {
           auctionId: activity.auctionId,
         };
       })
-      .slice(0, 8); // Show latest 8 activities
+      .slice(0, 100); // Show latest 8 activities
 
     setDisplayActivity(formatted);
-  }, [globalActivity, auctionProducts, rawAuctionData]);
+  }, [globalActivity]);
 
   // Show placeholder if no activities
   if (displayActivity.length === 0) {
@@ -61,7 +60,6 @@ const LiveActivityFeed = ({ auctionProducts, rawAuctionData }) => {
       </div>
     );
   }
-
   return (
     <div className="space-y-3 scroll-auto h-[20rem] overflow-y-auto pr-1">
       <AnimatePresence>
@@ -70,7 +68,7 @@ const LiveActivityFeed = ({ auctionProducts, rawAuctionData }) => {
           if (activity.type === "join") {
             return (
               <motion.div
-                key={activity.id}
+                key={`${activity.id}-${index}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -94,7 +92,7 @@ const LiveActivityFeed = ({ auctionProducts, rawAuctionData }) => {
           // Default: Place Bid
           return (
             <motion.div
-              key={activity.id}
+              key={`${activity.id}-${index}`}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}

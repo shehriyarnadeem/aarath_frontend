@@ -37,12 +37,19 @@ const DashboardLayout = ({ children }) => {
   ];
 
   const handleNavigation = (path) => {
-    // Check if navigation is intercepted (for auction room exit modal)
-    const canNavigate = interceptNavigation(path);
-    if (canNavigate) {
-      navigate(path);
+    const currentPath = window.location.pathname;
+    console.log("Attempting navigation to:", path);
+    // If user is in auction room and trying to navigate away, intercept
+    if (currentPath.includes("/auctions") && currentPath !== path) {
+      const canNavigate = interceptNavigation(path);
+      if (!canNavigate) {
+        // Navigation was blocked by auction room wrapper
+        return;
+      }
     }
-    // If canNavigate is false, the interceptor will handle showing the modal
+
+    // Normal navigation
+    navigate(path);
   };
 
   const handleLogout = async () => {

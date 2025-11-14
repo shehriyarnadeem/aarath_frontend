@@ -29,7 +29,6 @@ export const AuthProvider = ({ children }) => {
         try {
           // Fetch user profile from backend
           const profile = await apiClient.users.getById(firebaseUser.uid);
-          console.log("Fetched user profile:", profile);
           setUserProfile(profile);
         } catch (error) {
           console.error("Error fetching user profile:", error);
@@ -41,7 +40,6 @@ export const AuthProvider = ({ children }) => {
               name:
                 firebaseUser.displayName || firebaseUser.email?.split("@")[0],
             });
-            console.log("Created new user profile:", newProfile);
             setUserProfile(newProfile);
           } catch (createError) {
             console.error("Error creating user profile:", createError);
@@ -55,7 +53,6 @@ export const AuthProvider = ({ children }) => {
                 "User",
               businessName: firebaseUser.displayName || "My Business",
             };
-            console.log("Using fallback profile:", fallbackProfile);
             setUserProfile(fallbackProfile);
           }
         }

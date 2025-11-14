@@ -6,7 +6,6 @@ import { useAuth } from "../context/AuthContext";
 const ProtectedRoute = ({ children, redirectTo = "/" }) => {
   const { isAuthenticated, userProfile, loading } = useAuth();
   const location = useLocation();
-  console.log(userProfile, "ooosss");
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

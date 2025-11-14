@@ -36,6 +36,7 @@ const AuctionRoom = () => {
   const [showBidModal, setShowBidModal] = useState(false);
   const [bidAmount, setBidAmount] = useState("");
   const [isPlacingBid, setIsPlacingBid] = useState(false);
+  const [bidInfo, setBidInfo] = useState({ minimumBid: 0, currentBid: 0 });
 
   // Firebase hooks for selected auction
   const { placeBid } = useBidding(selectedAuction?.id);
@@ -44,6 +45,28 @@ const AuctionRoom = () => {
     rawAuctionData
   );
 
+  const getBidPlacingInfo = () => {
+    const rtdbAuctionState = realtimeAuction.auctionState || {};
+    const currentBid =
+      rtdbAuctionState.currentHighestBid || selectedAuction?.currentHighestBid;
+    const originalMinimumBid =
+      rtdbAuctionState.startingBid || selectedAuction?.startingBid || 0;
+
+    // Calculate minimum bid as 1% higher than current bid
+    const minimumBid =
+      currentBid > 0
+        ? Math.ceil(currentBid * 1.01)
+        : Math.max(originalMinimumBid, 1);
+
+    setBidInfo({ minimumBid, currentBid });
+    return;
+  };
+
+  useEffect(() => {
+    if (selectedAuction) {
+      getBidPlacingInfo();
+    }
+  }, [selectedAuction, realtimeAuction.auctionState]);
   // Data fetching
   useEffect(() => {
     const fetchAuctionProducts = async () => {
@@ -90,26 +113,7 @@ const AuctionRoom = () => {
       return;
     }
 
-    // Ensure we have valid values
-    const currentBid =
-      realtimeAuction.metadata?.currentHighestBid || auction.currentBid;
-    const originalMinimumBid = auction.minimumBid || 0;
-
-    // Calculate minimum bid as 1% higher than current bid
-    const minimumBid =
-      currentBid > 0
-        ? Math.ceil(currentBid * 1.01)
-        : Math.max(originalMinimumBid, 1);
-
-    // Update auction object with calculated minimum bid
-    const updatedAuction = {
-      ...auction,
-      currentBid: currentBid,
-      minimumBid: minimumBid,
-    };
-
-    setSelectedAuction(updatedAuction);
-    setBidAmount(minimumBid.toString());
+    setSelectedAuction(auction);
     setShowBidModal(true);
   };
 
@@ -132,7 +136,8 @@ const AuctionRoom = () => {
     if (!bidAmount || !selectedAuction) return;
 
     const bidValue = parseFloat(bidAmount);
-    const minimumRequired = selectedAuction?.minimumBid || 1;
+    const minimumRequired =
+      bidInfo?.minimumBid || selectedAuction?.minimumBid || 1;
 
     if (isNaN(bidValue) || bidValue < minimumRequired) {
       alert(`Minimum bid is ₨${minimumRequired.toLocaleString()}`);
@@ -272,10 +277,7 @@ const AuctionRoom = () => {
                     </span>
                   </div>
                 </div>
-                <LiveActivityFeed
-                  auctionProducts={auctionProducts}
-                  rawAuctionData={rawAuctionData}
-                />
+                <LiveActivityFeed rawAuctionData={rawAuctionData} />
               </div>
             </motion.div>
           </div>
@@ -435,15 +437,11 @@ const AuctionRoom = () => {
               {/* Auction Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 <AnimatePresence>
-                  {filteredAndSortedProducts.map((auction) => {
-                    const rawAuction = rawAuctionData.find(
-                      (a) => a.id === auction.id
-                    );
+                  {auctionProducts.map((auction) => {
                     return (
                       <RealtimeAuctionCard
                         key={auction.id}
                         auction={auction}
-                        rawAuction={rawAuction}
                         onBidClick={handleBidClick}
                         onWatchToggle={handleWatchToggle}
                         isAuthenticated={isAuthenticated}
@@ -527,12 +525,10 @@ const AuctionRoom = () => {
                   </h4>
                   <div className="text-sm text-gray-600 space-y-1">
                     <div>
-                      Current Bid: ₨
-                      {selectedAuction.currentBid.toLocaleString()}
+                      Current Bid: ₨{bidInfo?.currentBid.toLocaleString()}
                     </div>
                     <div>
-                      Minimum Bid: ₨
-                      {selectedAuction.minimumBid.toLocaleString()}
+                      Minimum Bid: ₨{bidInfo?.minimumBid.toLocaleString()}
                     </div>
                   </div>
                 </div>
@@ -551,15 +547,14 @@ const AuctionRoom = () => {
                     type="number"
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
-                    min={selectedAuction.minimumBid}
+                    min={bidInfo?.minimumBid}
                     step="1"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder={`Minimum: ${selectedAuction.minimumBid.toLocaleString()}`}
+                    placeholder={`Minimum: ${bidInfo?.minimumBid.toLocaleString()}`}
                   />
                   <div className="mt-2 text-xs text-gray-500">
-                    Must be at least ₨
-                    {selectedAuction.minimumBid.toLocaleString()} (1% higher
-                    than current bid)
+                    Must be at least ₨{bidInfo?.minimumBid.toLocaleString()} (1%
+                    higher than current bid)
                   </div>
                 </div>
               )}
