@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, Gavel } from "lucide-react";
-import { useGlobalAuctionActivity } from "../../hooks/useAuctionActivity";
+import { useGlobalAuctionActivity } from "../../../hooks/useAuctionActivity";
 
 /**
  * LiveActivityFeed Component - Shows real-time bidding activity across all auctions

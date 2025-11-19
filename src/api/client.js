@@ -2,6 +2,7 @@ import axios from "axios";
 
 import { auth } from "../firebaseConfig";
 import { API_BASE_URL } from "../utils/helpers";
+import Login from "../features/auth/pages/Login";
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -50,9 +51,9 @@ api.interceptors.response.use(
 export const apiClient = {
   // Auth endpoints
   auth: {
-    verifyToken: () => api.get("/api/auth"),
-    loginWithWhatsapp: (whatsapp) =>
-      api.post("/api/auth/otp/login-whatsapp", { whatsapp }),
+    login: (mobile) => api.post("/api/auth/otp/login-whatsapp", { mobile }),
+    verifyOtp: (mobile, otp) =>
+      api.post("/api/auth/otp/verify-otp", { mobile, code: otp }),
   },
 
   // User endpoints

@@ -31,14 +31,18 @@ const WhatsappVerification = ({
   return (
     <div className="space-y-4">
       <label className="block text-sm font-medium text-gray-700">
-        WhatsApp Number
+        Phone Verification{" "}
+        <span className="text-xs text-gray-500">
+          (Use the number registered with your SIM and WhatsApp both)
+        </span>
       </label>
-      <div className="flex space-x-2">
+      <div className="flex gap-2">
         <select
-          className="border rounded px-2 py-2 bg-white"
+          className="border rounded px-2 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={countryCode}
           onChange={handleCountryChange}
           disabled={verified}
+          aria-label="Country code"
         >
           {COUNTRY_CODES.map((c) => (
             <option key={c.code} value={c.code}>
@@ -48,23 +52,40 @@ const WhatsappVerification = ({
         </select>
         <input
           type="tel"
-          className="flex-1 border rounded px-3 py-2"
-          placeholder="Enter WhatsApp number"
+          className="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="WhatsApp number"
           value={input}
           onChange={handleInputChange}
           disabled={verified}
           pattern="[0-9]{7,15}"
+          aria-label="WhatsApp number"
+          maxLength={15}
         />
       </div>
       <Button
         onClick={() => onVerify(countryCode + input)}
-        disabled={verified || loading}
+        disabled={verified || loading || !input.match(/^[0-9]{7,15}$/)}
         loading={loading}
       >
         {verified ? "Verified" : "Verify"}
       </Button>
       {verified && (
-        <div className="text-green-600 text-sm">Number verified!</div>
+        <div className="text-green-600 text-sm flex items-center gap-1">
+          <svg
+            className="w-4 h-4 inline-block"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          Number verified!
+        </div>
       )}
     </div>
   );

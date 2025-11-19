@@ -1,24 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Gavel } from "lucide-react";
-import Button from "../../../components/Button";
 import { apiClient } from "../../../api/client";
 import { useAuth } from "../../../context/AuthContext";
-import {
-  useBidding,
-  useRealtimeAuction,
-  useOnlineParticipants,
-} from "../../../hooks";
-import {
-  LiveActivityFeed,
-  RealtimeAuctionCard,
-} from "../../../components/auction";
 import {
   transformProductToAuctionFormat,
   categories,
   sortOptions,
   filterAndSortAuctions,
 } from "../../../utils/auctionUtils";
+import AuctionPlaceBidModal from "../components/AuctionPlaceBidModal";
+import AuctionQuickStats from "../components/AuctionQuickStats";
+import RealtimeAuctionCard from "../components//RealtimeAuctionCard";
+import LiveActivityFeed from "../components/LiveActivityFeed";
 const AuctionRoom = () => {
   const { isAuthenticated } = useAuth();
 
@@ -34,46 +27,14 @@ const AuctionRoom = () => {
   // Auction specific states
   const [selectedAuction, setSelectedAuction] = useState(null);
   const [showBidModal, setShowBidModal] = useState(false);
-  const [bidAmount, setBidAmount] = useState("");
-  const [isPlacingBid, setIsPlacingBid] = useState(false);
-  const [bidInfo, setBidInfo] = useState({ minimumBid: 0, currentBid: 0 });
 
-  // Firebase hooks for selected auction
-  const { placeBid } = useBidding(selectedAuction?.id);
-  const realtimeAuction = useRealtimeAuction(
-    selectedAuction?.id,
-    rawAuctionData
-  );
-
-  const getBidPlacingInfo = () => {
-    const rtdbAuctionState = realtimeAuction.auctionState || {};
-    const currentBid =
-      rtdbAuctionState.currentHighestBid || selectedAuction?.currentHighestBid;
-    const originalMinimumBid =
-      rtdbAuctionState.startingBid || selectedAuction?.startingBid || 0;
-
-    // Calculate minimum bid as 1% higher than current bid
-    const minimumBid =
-      currentBid > 0
-        ? Math.ceil(currentBid * 1.01)
-        : Math.max(originalMinimumBid, 1);
-
-    setBidInfo({ minimumBid, currentBid });
-    return;
-  };
-
-  useEffect(() => {
-    if (selectedAuction) {
-      getBidPlacingInfo();
-    }
-  }, [selectedAuction, realtimeAuction.auctionState]);
   // Data fetching
   useEffect(() => {
     const fetchAuctionProducts = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await apiClient.products.getAuctions("active");
+        const response = await apiClient.products.getAuctions();
 
         if (response.success && response.data && response.data.auctions) {
           setRawAuctionData(response.data.auctions);
@@ -117,50 +78,8 @@ const AuctionRoom = () => {
     setShowBidModal(true);
   };
 
-  const handleWatchToggle = (auctionId) => {
-    if (!isAuthenticated) {
-      alert("Please login to watch auctions");
-      return;
-    }
-
-    setAuctionProducts((prev) =>
-      prev.map((auction) =>
-        auction.id === auctionId
-          ? { ...auction, isWatched: !auction.isWatched }
-          : auction
-      )
-    );
-  };
-
-  const handlePlaceBid = async () => {
-    if (!bidAmount || !selectedAuction) return;
-
-    const bidValue = parseFloat(bidAmount);
-    const minimumRequired =
-      bidInfo?.minimumBid || selectedAuction?.minimumBid || 1;
-
-    if (isNaN(bidValue) || bidValue < minimumRequired) {
-      alert(`Minimum bid is ₨${minimumRequired.toLocaleString()}`);
-      return;
-    }
-
-    try {
-      setIsPlacingBid(true);
-      await placeBid(bidValue);
-      setShowBidModal(false);
-      setBidAmount("");
-      setSelectedAuction(null);
-    } catch (error) {
-      console.error("Error placing bid:", error);
-      alert("Failed to place bid. Please try again.");
-    } finally {
-      setIsPlacingBid(false);
-    }
-  };
-
   const handleCloseBidModal = () => {
     setShowBidModal(false);
-    setBidAmount("");
     setSelectedAuction(null);
   };
 
@@ -387,28 +306,7 @@ const AuctionRoom = () => {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="border-t border-gray-200 pt-6">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">
-                    Quick Stats
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Total Auctions</span>
-                      <span className="font-semibold text-gray-900">
-                        {auctionProducts.length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Active Bids</span>
-                      <span className="font-semibold text-green-600">
-                        {auctionProducts.reduce(
-                          (sum, auction) => sum + auction.totalBids,
-                          0
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <AuctionQuickStats auctionProducts={auctionProducts} />
               </div>
             </motion.div>
 
@@ -437,149 +335,40 @@ const AuctionRoom = () => {
               {/* Auction Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 <AnimatePresence>
-                  {auctionProducts.map((auction) => {
-                    return (
-                      <RealtimeAuctionCard
-                        key={auction.id}
-                        auction={auction}
-                        onBidClick={handleBidClick}
-                        onWatchToggle={handleWatchToggle}
-                        isAuthenticated={isAuthenticated}
-                      />
-                    );
-                  })}
+                  {auctionProducts && auctionProducts.length > 0 ? (
+                    auctionProducts.map((auction) => {
+                      return (
+                        <RealtimeAuctionCard
+                          key={auction.id}
+                          auction={auction}
+                          onBidClick={handleBidClick}
+                          isAuthenticated={isAuthenticated}
+                        />
+                      );
+                    })
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-16"
+                    >
+                      <p className="text-gray-600">No auctions found</p>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
               </div>
-
-              {filteredAndSortedProducts.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-16"
-                >
-                  <div className="bg-white rounded-2xl p-12 border border-gray-200 shadow-lg max-w-md mx-auto">
-                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <svg
-                        className="w-10 h-10 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.081-2.334m0 0A7.96 7.96 0 014 12.015m0 0A7.962 7.962 0 012.292 9.2m0 0A7.96 7.96 0 014 7.986m0 0A7.962 7.962 0 017.007 6M15 19.128v-2.073c0-.715-.184-1.416-.531-2.04M18 12v-2c0-3.313-2.69-6-6-6s-6 2.687-6 6v2"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      No auctions found
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      Try adjusting your search terms or filters to find more
-                      auctions.
-                    </p>
-                    <button
-                      onClick={() => {
-                        setSearch("");
-                        setSelectedCategory("all");
-                      }}
-                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      Clear Filters
-                    </button>
-                  </div>
-                </motion.div>
-              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Bid Modal */}
-      <AnimatePresence>
-        {showBidModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={handleCloseBidModal}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl p-6 max-w-md w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                Place Your Bid
-              </h3>
-
-              {selectedAuction ? (
-                <div className="mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">
-                    {selectedAuction.title}
-                  </h4>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <div>
-                      Current Bid: ₨{bidInfo?.currentBid.toLocaleString()}
-                    </div>
-                    <div>
-                      Minimum Bid: ₨{bidInfo?.minimumBid.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="mb-4 text-red-600">
-                  Error: No auction selected
-                </div>
-              )}
-
-              {selectedAuction && (
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Your Bid Amount (₨)
-                  </label>
-                  <input
-                    type="number"
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    min={bidInfo?.minimumBid}
-                    step="1"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder={`Minimum: ${bidInfo?.minimumBid.toLocaleString()}`}
-                  />
-                  <div className="mt-2 text-xs text-gray-500">
-                    Must be at least ₨{bidInfo?.minimumBid.toLocaleString()} (1%
-                    higher than current bid)
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleCloseBidModal}
-                  variant="outline"
-                  className="flex-1"
-                  disabled={isPlacingBid}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handlePlaceBid}
-                  className="flex-1 bg-green-600 text-white hover:bg-green-700"
-                  disabled={isPlacingBid}
-                >
-                  {isPlacingBid ? "Placing Bid..." : "Place Bid"}
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AuctionPlaceBidModal
+        showBidModal={showBidModal}
+        setShowBidModal={setShowBidModal}
+        handleCloseBidModal={handleCloseBidModal}
+        selectedAuction={selectedAuction}
+      />
     </div>
   );
 };

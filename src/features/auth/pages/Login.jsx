@@ -7,8 +7,7 @@ import { apiClient } from "../../../api/client";
 import Button from "../../../components/Button";
 import Logo from "../../../components/Logo";
 import { auth, googleProvider } from "../../../firebaseConfig";
-
-const API_BASE_URL = process.env.REACT_APP_API_URL;
+import { API_BASE_URL } from "../../../utils/helpers";
 
 const Login = ({ onSuccess, onSwitchToRegister }) => {
   const navigate = useNavigate();
@@ -22,53 +21,54 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
   const handleSendOtp = async () => {
     setIsLoading(true);
     setError("");
-    // try {
-    //   const response = await fetch(`${API_BASE_URL}/api/auth/otp/request-otp`, {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ mobile }),
-    //   });
-    //   const result = await response.json();
-    //   if (result.success) {
-    setOtpSent(true);
-    setIsLoading(false);
-    setError("");
-    toast.success("OTP sent to your mobile number!");
-    // } else {
-    //   setIsLoading(false);
-    //   setError(result.error || "Failed to send OTP. Please try again.");
-    // }
-    // } catch (err) {
-    //   setIsLoading(false);
-    //   setError("Network error. Please try again.");
-    // }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/otp/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ whatsapp: mobile }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setOtpSent(true);
+        setIsLoading(false);
+        setError("");
+        toast.success(result.message || "OTP sent to your mobile number!");
+      } else {
+        setIsLoading(false);
+        setError(result.error || "Failed to send OTP. Please try again.");
+      }
+    } catch (err) {
+      setIsLoading(false);
+      setError("Network error. Please try again.");
+    }
   };
 
   const handleVerifyOtp = async () => {
     setIsLoading(true);
     setError("");
     try {
-      const response = await apiClient.auth.loginWithWhatsapp(mobile);
-      const result = await response;
-      if (result.token) {
-        // Sign in to Firebase with custom token
-        const auth = getAuth();
-        await signInWithCustomToken(auth, result.token);
-        setIsLoading(false);
-        setError("");
-        toast.success("Successfully logged in!");
-        onSuccess?.({ mobile });
-      } else {
-        console.log("Invalid OTP result:", result);
-        setIsLoading(false);
+      const verifyResult = await apiClient.auth.verifyOtp(mobile, otp);
+      if (!verifyResult.success) {
         setError(
-          result.error || "Invalid whatsapp number or OTP. Please try again."
+          verifyResult.error ||
+            "Invalid WhatsApp number or OTP. Please try again."
         );
+        return;
       }
+
+      const loginResult = await apiClient.auth.login(mobile);
+      if (!loginResult.token) {
+        setError("Failed to retrieve authentication token.");
+        return;
+      }
+
+      await signInWithCustomToken(getAuth(), loginResult.token);
+      toast.success("Successfully logged in!");
+      onSuccess?.({ mobile });
     } catch (err) {
-      console.log("Error verifying OTP:", err);
+      setError(err?.error || "Network error. Please try again.");
+    } finally {
       setIsLoading(false);
-      setError(err.error || "Network error. Please try again.");
     }
   };
 

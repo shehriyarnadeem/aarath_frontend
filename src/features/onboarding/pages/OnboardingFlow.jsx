@@ -34,6 +34,7 @@ const OnboardingFlow = () => {
     role: "",
     state: "",
     city: "",
+    code: "",
     businessCategories: [],
     profileCompletion: { businessName: "", email: "" },
   });
@@ -102,18 +103,15 @@ const OnboardingFlow = () => {
     }
     setVerificationLoading(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/auth/otp/verify-whatsapp`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ whatsapp: formData.whatsapp }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/auth/otp/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ whatsapp: formData.whatsapp }),
+      });
       const result = await response.json();
       if (result.success) {
         setOtpStep(true);
-        toast.success("OTP sent to your WhatsApp number.");
+        toast.success(result.message || "OTP sent to your WhatsApp number.");
       } else {
         toast.error(result.error || "WhatsApp number already exists");
       }
@@ -127,14 +125,14 @@ const OnboardingFlow = () => {
   const handleOtpVerify = async () => {
     setOtpLoading(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/auth/otp/verify-otp-signup`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mobile: formData.whatsapp, otp }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/auth/otp/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mobile: formData.whatsapp,
+          code: otp,
+        }),
+      });
       const result = await response.json();
       if (result.success) {
         // Only mark WhatsApp as verified, do NOT sign in to Firebase here
@@ -142,6 +140,7 @@ const OnboardingFlow = () => {
         setOtpStep(false);
         toast.success("OTP verified!");
       } else {
+        setFormData((prev) => ({ ...prev, whatsappVerified: false }));
         toast.error(result.error || "Invalid OTP");
       }
     } catch (err) {
@@ -210,7 +209,7 @@ const OnboardingFlow = () => {
   };
 
   const stepTitles = {
-    1: "WhatsApp Verification",
+    1: "Phone Verfication",
     2: "Location Details",
     3: "Role Selection",
     4: "Profile Completion",
@@ -298,17 +297,27 @@ const OnboardingFlow = () => {
                       Enter OTP
                     </label>
                     <input
-                      className="w-full border rounded px-3 py-2 tracking-widest text-center"
+                      className="w-30 border rounded px-3 py-2 tracking-widest text-center"
                       type="text"
                       maxLength={6}
                       placeholder="6-digit OTP"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
+                      style={{
+                        letterSpacing: "0.5em",
+                        fontSize: "1rem",
+                        textAlign: "center",
+                        border: "2px solid white",
+                        borderRadius: "0.5rem",
+
+                        outline: "none",
+                        boxShadow: "0 0 0 2px #bbf7d0",
+                      }}
                     />
                     <Button
                       onClick={handleOtpVerify}
                       loading={otpLoading}
-                      className="w-full"
+                      className="w-30 mx-10"
                     >
                       Verify OTP
                     </Button>

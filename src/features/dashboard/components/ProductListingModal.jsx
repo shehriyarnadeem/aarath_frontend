@@ -374,10 +374,10 @@ const ProductListingModal = ({ isOpen, onClose, onSuccess }) => {
                   onChange={handleChange}
                   className="input-field"
                 >
+                  <option value="1">1 Minute</option>
+                  <option value="5">5 Minutes</option>
                   <option value="12">12 Hours</option>
                   <option value="24">24 Hours</option>
-                  <option value="48">48 Hours</option>
-                  <option value="72">72 Hours</option>
                 </select>
               </div>
             </div>

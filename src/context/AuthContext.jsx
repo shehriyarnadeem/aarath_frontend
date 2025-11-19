@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUser) {
         setUser(firebaseUser);
         setIsAuthenticated(true);
-
+        console.log("Firebase user detected:", firebaseUser);
         try {
           // Fetch user profile from backend
           const profile = await apiClient.users.getById(firebaseUser.uid);

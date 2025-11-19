@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Timer, Package, MapPin, Gavel, Activity } from "lucide-react";
-import Button from "../Button";
+import { Timer, Package, MapPin, Gavel, Activity, Trophy } from "lucide-react";
+import Button from "../../../components/Button";
 import {
   useRealtimeAuction,
   useOnlineParticipants,
   useBidding,
-} from "../../hooks";
+} from "../../../hooks";
 
 /**
  * RealtimeAuctionCard Component - Individual auction card with Firebase integration
@@ -30,12 +30,12 @@ const RealtimeAuctionCard = ({ auction, onBidClick }) => {
   // Live countdown timer
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // useEffect(() => {
-  //   const timer = setInterval(() => {
-  //     setCurrentTime(new Date());
-  //   }, 1000);
-  //   return () => clearInterval(timer);
-  // }, []);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const formatTimeLeft = (endTime) => {
     const now = currentTime;
@@ -204,8 +204,37 @@ const RealtimeAuctionCard = ({ auction, onBidClick }) => {
             </div>
 
             {isEnded ? (
-              <div className="text-center py-4">
-                <div className="text-3xl font-bold text-red-600">ENDED</div>
+              <div className="text-center py-4 space-y-3">
+                <div className="text-2xl font-bold text-red-600">ENDED</div>
+
+                {/* Winner Display */}
+                {bidsData && bidsData.length > 0 && (
+                  <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-3">
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                      <Trophy className="w-5 h-5 text-yellow-600" />
+                      <span className="text-sm font-semibold text-yellow-800">
+                        Winner
+                      </span>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-gray-900 mb-1">
+                        {bidsData[bidsData.length - 1]?.userName || "Anonymous"}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Winning bid: ₨ {currentBid?.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* No bids case */}
+                {(!bidsData || bidsData.length === 0) && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <div className="text-sm text-gray-500 text-center">
+                      No bids were placed
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-3 max-h-[4rem]">
