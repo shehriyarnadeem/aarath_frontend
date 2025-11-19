@@ -113,23 +113,15 @@ const Marketplace = () => {
       }
       params.sort = sort;
 
-      console.log("API call params:", params);
-      console.log("Selected category:", selectedCategory);
-
       // Call API with all parameters
-      const response = await apiClient.products.getAll(params);
-
-      console.log("API response:", response);
+      const response = await apiClient.marketplace.getProducts(params);
 
       if (response.success) {
         setProducts(response.products || []);
         setTotalItems(response.pagination?.total || 0);
         setTotalPages(response.pagination?.totalPages || 0);
-        console.log("Products set:", response.products?.length || 0);
-      } else {
         setError("No products found");
         setProducts([]);
-        console.log("API response not successful:", response);
       }
     } catch (err) {
       console.error("Error fetching products:", err);
@@ -153,12 +145,11 @@ const Marketplace = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await apiClient.products.getAll({
+        const response = await apiClient.marketplace.getProducts({
           page: 1,
           limit: 12,
           environment: "MARKETPLACE",
         });
-        console.log("Initial response:", response);
 
         if (response.success) {
           setProducts(response.products || []);
@@ -204,8 +195,6 @@ const Marketplace = () => {
     window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top when changing pages
   };
 
-  // Filter products (keeping existing status/condition filters for UI)
-  console.log(products);
   // Sidebar filter UI
   return (
     <div className="bg-gray-50 min-h-screen w-full">

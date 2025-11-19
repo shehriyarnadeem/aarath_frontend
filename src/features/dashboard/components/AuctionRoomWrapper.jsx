@@ -4,14 +4,20 @@ import { useNavigationContext } from "../../../context/NavigationContext";
 import AuctionRoom from "../pages/AuctionRoom";
 import AuctionTermsModal from "../components/AuctionTermsModal";
 import AuctionExitModal from "../components/AuctionExitModal";
-
+import { useAuth } from "../../../context/AuthContext";
 const AuctionRoomWrapper = () => {
   const [showTerms, setShowTerms] = useState(true);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showAuctionExitModal, setShowAuctionExitModal] = useState(false);
-
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { navigationBlocked, currentPath } = useNavigationContext();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/auth/login");
+    }
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     if (navigationBlocked) {

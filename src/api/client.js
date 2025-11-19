@@ -3,6 +3,7 @@ import axios from "axios";
 import { auth } from "../firebaseConfig";
 import { API_BASE_URL } from "../utils/helpers";
 import Login from "../features/auth/pages/Login";
+import Marketplace from "../features/dashboard/pages/Marketplace";
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -70,6 +71,10 @@ export const apiClient = {
   },
 
   // Products endpoints
+  marketplace: {
+    getProducts: (params = {}) =>
+      api.get("/api/marketplace/products", { params }), // Alias for getAll
+  },
   products: {
     getAll: (params = {}) => api.get("/api/products", { params }),
     getProducts: (params = {}) => api.get("/api/products", { params }), // Alias for getAll
