@@ -1,9 +1,6 @@
 import axios from "axios";
 
 import { auth } from "../firebaseConfig";
-import { API_BASE_URL } from "../utils/helpers";
-import Login from "../features/auth/pages/Login";
-import Marketplace from "../features/dashboard/pages/Marketplace";
 
 // Create axios instance with base configuration
 const api = axios.create({

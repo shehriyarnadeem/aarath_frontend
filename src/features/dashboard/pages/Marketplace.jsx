@@ -115,18 +115,17 @@ const Marketplace = () => {
 
       // Call API with all parameters
       const response = await apiClient.marketplace.getProducts(params);
-
+      console.log("Marketplace products response:", response);
       if (response.success) {
         setProducts(response.products || []);
         setTotalItems(response.pagination?.total || 0);
         setTotalPages(response.pagination?.totalPages || 0);
-        setError("No products found");
-        setProducts([]);
       }
     } catch (err) {
       console.error("Error fetching products:", err);
       setError("Failed to load products");
       setProducts([]);
+      setError("No products found");
     } finally {
       setLoading(false);
     }
@@ -232,46 +231,8 @@ const Marketplace = () => {
             </div>
           </div>
         </div>
-
-        {/* Bottom Wave */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1200 120" className="w-full h-8 fill-gray-50">
-            <path d="M0,60 C300,120 900,0 1200,60 L1200,120 L0,120 Z" />
-          </svg>
-        </div>
       </div>
 
-      {/* Quick Categories & Trending Section */}
-      <div className="bg-gray-50 py-8 px-4 sm:px-8 w-full">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-4 gap-6">
-            {/* Popular Categories */}
-            <div className="lg:col-span-3">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                Popular Categories Today
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {categories.slice(1, 5).map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => handleCategoryChange(cat.id)}
-                    className="bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 hover:border-green-300 group"
-                  >
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-lg mx-auto mb-3 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <span className="text-white text-xl">🌾</span>
-                      </div>
-                      <h3 className="font-semibold text-gray-900 text-sm">
-                        {cat.name}
-                      </h3>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
       {/* Search & Filters */}
       <div className="w-full px-4 sm:px-8 py-6 flex flex-col md:flex-row gap-8">
         {/* Sidebar Filters - PakWheels Style */}
