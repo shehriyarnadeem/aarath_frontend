@@ -64,7 +64,7 @@ export const apiClient = {
     checkProfileCompletion: (id) => api.get(`/api/users/${id}/profile-status`),
     getProfileStats: (id) => api.get(`/api/users/${id}/profile-stats`),
     onboardingComplete: (userData) =>
-      api.post("/api/users/onboarding-complete/onboarding-complete", userData),
+      api.post("/api/users/onboarding-complete", userData),
   },
 
   // Products endpoints

@@ -169,20 +169,20 @@ const OnboardingFlow = () => {
         profileCompleted: true,
       };
       const response = await apiClient.users.onboardingComplete(payload);
+      console.log("Onboarding response:", response);
       if (response && response.token) {
         await signInWithCustomToken(auth, response.token); // Refresh session
         updateUserProfile(response.user);
         toast.success("Profile setup completed successfully!");
         navigate("/dashboard");
-      } else if (response?.error?.includes("already exists")) {
-        toast.success("Account already exists. Logging you in...");
-        navigate("/dashboard");
-      } else {
-        throw new Error(response?.error || "Failed to create user and session");
+      } else if (response?.error) {
+        toast.success(response.error?.message);
       }
-    } catch (error) {
-      console.error("Error completing onboarding:", error);
-      toast.error("Failed to complete profile setup. Please try again.");
+    } catch (err) {
+      toast.error(
+        err.error.message ||
+          "Failed to complete profile setup. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
