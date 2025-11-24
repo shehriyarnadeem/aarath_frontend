@@ -25,7 +25,7 @@ const Login = ({ onSuccess, onSwitchToRegister }) => {
       const response = await fetch(`${API_BASE_URL}/api/auth/otp/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ whatsapp: mobile }),
+        body: JSON.stringify({ whatsapp: mobile, usecase: "login" }),
       });
       const result = await response.json();
       if (result.success) {

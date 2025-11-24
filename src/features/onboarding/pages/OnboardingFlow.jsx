@@ -106,7 +106,10 @@ const OnboardingFlow = () => {
       const response = await fetch(`${API_BASE_URL}/api/auth/otp/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ whatsapp: formData.whatsapp }),
+        body: JSON.stringify({
+          whatsapp: formData.whatsapp,
+          usecase: "registration",
+        }),
       });
       const result = await response.json();
       if (result.success) {
@@ -169,7 +172,7 @@ const OnboardingFlow = () => {
         profileCompleted: true,
       };
       const response = await apiClient.users.onboardingComplete(payload);
-      console.log("Onboarding response:", response);
+
       if (response && response.token) {
         await signInWithCustomToken(auth, response.token); // Refresh session
         updateUserProfile(response.user);
